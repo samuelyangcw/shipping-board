@@ -1,11 +1,9 @@
 {
-  "name": "出貨看板",
-  "short_name": "出貨看板",
-  "start_url": "./",
-  "scope": "./",
+  "name": "鳳梨小姐出貨系統",
+  "short_name": "鳳梨出貨",
   "display": "standalone",
-  "background_color": "#F2F2F7",
-  "theme_color": "#F2F2F7",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "icons": [
     {
       "src": "icon-192.png",
