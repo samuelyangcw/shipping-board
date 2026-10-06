@@ -232,6 +232,8 @@ textarea.inp{min-height:88px;resize:vertical}
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:40;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;font-weight:600;max-width:90%;box-shadow:0 10px 30px rgba(0,0,0,.2);transform:translate(-50%,-140%);transition:transform .45s var(--spring);pointer-events:none}
 .toast.show{transform:translate(-50%,0)}
+.toast.has-undo{pointer-events:auto;display:flex;align-items:center;gap:14px}
+.toast .undo{color:#FFD60A;font-weight:800;font-size:15px}
 .sync{font-size:12px;color:var(--ink3);text-align:center;margin-top:16px}
 
 /* ---------- print labels ---------- */
@@ -292,7 +294,7 @@ var PLATFORMS = {
   myship: {name:'賣貨便', color:'var(--p-myship)', ink:'#fff', hex:'#00843D', bar:'linear-gradient(var(--p-711-o) 0 33%,var(--p-myship) 33% 67%,var(--p-711-r) 67%)',
            link:function(){return 'https://myship.7-11.com.tw/seller/order/DealWith'}}
 };
-var STEPS = ['待揀貨','已包好','已貼單','已寄出'];
+var STEPS = ['待出貨','待出貨','待出貨','已寄出'];
 var NEXT_LABEL = ['包好了','寄件單貼好了','拍封箱照並寄出'];
 var ICON = {
   copy:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>',
@@ -349,7 +351,7 @@ function when(t){return isToday(t)?hm(t):mdOf(ymd(new Date(t)))+' '+hm(t)}
 function ago(t){var m=Math.round((Date.now()-t)/60000);if(m<1)return '剛剛';if(m<60)return m+' 分鐘前';var h=Math.round(m/60);if(h<24)return h+' 小時前';return Math.round(h/24)+' 天前'}
 function isAdmin(){return state.me && state.me.role==='admin'}
 function pinOk(p){return /^\d{4}$/.test(p)}
-function toast(msg){var el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){el.classList.remove('show')},2300)}
+function toast(msg,undo){var el=$('toast');el.textContent=msg;if(undo){var b=document.createElement('button');b.className='undo';b.textContent='復原';b.onclick=function(){el.classList.remove('show');undo()};el.appendChild(b);}el.classList.toggle('has-undo',!!undo);el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){el.classList.remove('show')},undo?5000:2300)}
 function copyText(t){
   if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).catch(function(){fallbackCopy(t)});
   fallbackCopy(t); return Promise.resolve();
@@ -416,12 +418,12 @@ function renderHeader(){
   $('cutoff').innerHTML = !state.loggedIn ? '' : (left>0
     ? '<div class="cutoff">'+ICON.clock+'<span>'+cut+' 截單</span><span class="sub">還有 '+(left>=60?Math.floor(left/60)+' 小時 ':'')+(left%60)+' 分 · 今天要寄 '+dueToday+' 筆</span></div>'
     : '<div class="cutoff closed">'+ICON.clock+'<span>今天已截單</span><span class="sub">之後的訂單明天寄 · 今天還有 '+dueToday+' 筆沒寄</span></div>');
-  var c=[0,0,0];active.forEach(function(o){c[o.status]++});
+  var over=active.filter(function(o){return dueOf(o)==='over'}).length;
   var shippedToday=state.orders.filter(function(o){return o.status===3&&isToday(o.updatedAt)}).length;
   if(!$('stats').children.length){
-    $('stats').innerHTML=['待包貨','待貼單','待寄出','今天已寄'].map(function(l,i){return '<div class="stat'+(i===3?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
+    $('stats').innerHTML=['待出貨','今天要寄','逾期','今天已寄'].map(function(l,i){return '<div class="stat'+(i===3?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
   }
-  var bs=$('stats').querySelectorAll('b'); [c[0],c[1],c[2],shippedToday].forEach(function(v,i){tween(bs[i],v)});
+  var bs=$('stats').querySelectorAll('b'); [active.length,dueToday,over,shippedToday].forEach(function(v,i){tween(bs[i],v)});
   var pool = state.view==='done' ? state.orders.filter(function(o){return o.status===3}) : active;
   var chips=[['all','全部']].concat(Object.keys(PLATFORMS).map(function(k){return [k,PLATFORMS[k].name]}));
   $('chips').innerHTML = chips.map(function(p){
@@ -462,7 +464,7 @@ function render(){
     });
   } else rows.sort(function(a,b){return b.updatedAt-a.updatedAt});
   if(!rows.length){
-    m.innerHTML='<div class="empty view"><div class="big">'+(done?'📭':'🎉')+'</div><b>'+(done?'最近 7 天沒有寄出的訂單':'全部處理完了')+'</b>'+(done?'':'按右下角「＋」新增訂單')+'</div>';
+    m.innerHTML='<div class="empty view"><div class="big">'+(done?'📭':'🎉')+'</div><b>'+(done?'最近 7 天沒有寄出的訂單':'全部出貨完了')+'</b>'+(done?'':'有新訂單會出現在這裡')+'</div>';
     return;
   }
   var i=0;
@@ -487,26 +489,21 @@ function cardHTML(o,newIdx){
     '<div class="ono-row"><span class="ono">'+esc(o.orderNo||'（未填編號）')+'</span>'+(o.orderNo?'<button class="icon-btn" data-act="copy" aria-label="複製編號">'+ICON.copy+'</button>':'')+'</div>'+
     (items.length?'<div class="items">'+items.map(function(it){var l=locOf(it.name);return '<div class="item">'+thumb(it.name)+'<div class="itx"><div class="iname">'+esc(it.name)+'</div><div class="imeta">'+(l?'<span class="loc">'+esc(l)+'</span>':'')+'<span class="iq">× '+it.qty+'</span></div></div></div>'}).join('')+'</div>':'')+
     (o.note?'<div class="note"><b>備註 </b>'+esc(o.note)+'</div>':'')+
-    '<div class="prog">'+[0,1,2,3].map(function(i){return '<i class="'+(i<=o.status?'on':'')+'"></i>'}).join('')+'</div>'+
-    '<div class="prog-l"><span><b>'+STEPS[o.status]+'</b>'+(last?' · '+esc(last.by)+' '+when(last.at):'')+'</span>'+
+    '<div class="prog-l"><span>'+(last?esc(last.s)+' · '+esc(last.by)+' '+when(last.at):'')+'</span>'+
     ((o.photos||[]).length?'<span class="ph">'+ICON.cam+(o.photos.length>1?o.photos.length:'')+'</span>':'')+'</div>';
-  if(o.status===1){
-    h += '<div class="hint-box"><span class="tx">到'+p.name+'後台印寄件單貼上，<b>不用手寫編號</b></span><button data-act="backend">'+ICON.copy+'複製並開後台</button></div>';
-  }
   if(o.status<3){
-    h += '<button class="go" data-act="next">'+(o.status===2?ICON.cam:'')+NEXT_LABEL[o.status]+(o.status<2?ICON.arrow:'')+'</button>';
+    h += '<button class="go" data-act="ship">'+ICON.check+'出貨完成</button>';
   }
   h += '<div class="sub">'+
-    (o.status<3?'<button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'標記急單')+'</button>':'')+
-    (o.status>0?'<button data-act="back">退回上一步</button>':'')+
-    '<button data-act="edit">詳細 / 紀錄</button></div>';
+    (o.status<3?'<button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button><button data-act="photo">拍照存證</button>':'<button data-act="unship">改回未出貨</button>')+
+    '<button data-act="edit">詳細</button></div>';
   return h+'</div>';
 }
 
 /* ---------- pick list ---------- */
 function pickOrders(){
   return state.orders.filter(function(o){
-    if(o.status!==0) return false;
+    if(o.status>=3) return false;
     if(state.pf!=='all' && o.platform!==state.pf) return false;
     if(state.pickScope==='today'){ var u=dueOf(o); return u===null||u==='today'||u==='over'||o.urgent; }
     return true;
@@ -554,7 +551,7 @@ function labelHTML(o){
 function openPrint(list){
   if(!list.length){toast('沒有可以印的訂單');return}
   $('printArea').innerHTML=list.map(labelHTML).join('');
-  openSheet('<h2>包裹標籤</h2><div class="hint">10 × 15 公分，每張一筆訂單。包好後貼在袋子上，就不用手寫編號；之後再把平台寄件單貼上去。</div>'+
+  openSheet('<h2>包裹標籤</h2><div class="hint">10 × 15 公分，每張一筆訂單。包好後貼在袋子上，就不用手寫編號。</div>'+
     '<div class="row2"><button class="btn-ghost" data-close>取消</button><button class="btn-main" id="doPrint">'+'列印 '+list.length+' 張</button></div>'+
     '<div class="pv-wrap">'+list.map(labelHTML).join('')+'</div>');
   $('doPrint').onclick=function(){ window.print(); };
@@ -799,7 +796,7 @@ function orderForm(o){
     if(editing) act('apiUpdate',o.id,data).then(function(){toast('已儲存')}); else act('apiAdd',data).then(function(){toast('已新增')});
   };
   if(editing){
-    $('addPh').onclick=function(){ state.pendingPhoto={id:o.id,ship:false}; $('cam').click(); };
+    $('addPh').onclick=function(){ state.pendingPhoto={id:o.id,ship:false,reopen:true}; $('cam').click(); };
     if($('photos')) Array.prototype.forEach.call($('photos').children,function(el){
       call('apiPhoto',el.dataset.ph).then(function(u){el.style.backgroundImage='url('+u+')';el.classList.add('loaded');el.onclick=function(){openPhoto(u)}}).catch(function(){el.classList.add('loaded')});
     });
@@ -834,13 +831,13 @@ $('cam').addEventListener('change',function(){
   toast('上傳照片中…');
   compress(f).then(function(d){ return call('apiPhotoAdd',job.id,d); }).then(function(data){
     apply(data);
-    if(job.ship){ shipOut(job.id); } else { toast('照片已存好'); var o=findOrder(job.id); if(o) orderForm(o); }
+    if(job.ship){ shipOut(job.id); } else { toast('照片已存好'); if(job.reopen){ var o=findOrder(job.id); if(o) orderForm(o); } }
   }).catch(function(e){ toast(e.message||'照片上傳失敗'); });
 });
 function shipOut(id){
   var el=document.querySelector('.card[data-id="'+id+'"]');
   if(el) el.classList.add('leaving');
-  setTimeout(function(){ act('apiSetStatus',id,3).then(function(){toast('已寄出 ✓')}); },280);
+  setTimeout(function(){ act('apiSetStatus',id,3).then(function(){toast('已出貨 ✓',function(){act('apiSetStatus',id,0).then(function(){toast('已改回未出貨')})})}); },260);
 }
 function askPhoto(o){
   openSheet('<h2>拍封箱照</h2><div class="hint">對著封好的包裹拍一張（看得到寄件單），客人說少件時可以拿出來證明。</div>'+
@@ -871,11 +868,9 @@ $('main').addEventListener('click',function(e){
   var a=b.dataset.act;
   if(a==='copy'){ copyText(o.orderNo).then(function(){toast('已複製 '+o.orderNo)}); }
   else if(a==='backend'){ copyText(o.orderNo); window.open(PLATFORMS[o.platform].link(o.orderNo),'_blank'); toast('編號已複製，到後台貼上搜尋'); }
-  else if(a==='next'){
-    if(o.status===2){ askPhoto(o); return; }
-    b.disabled=true; b.textContent='更新中…'; act('apiSetStatus',id,o.status+1);
-  }
-  else if(a==='back'){ act('apiSetStatus',id,o.status-1); }
+  else if(a==='ship'){ if(navigator.vibrate) navigator.vibrate(12); shipOut(id); }
+  else if(a==='photo'){ state.pendingPhoto={id:id,ship:false}; $('cam').click(); }
+  else if(a==='unship'){ act('apiSetStatus',id,0).then(function(){toast('已改回未出貨')}); }
   else if(a==='urgent'){ act('apiUpdate',id,{urgent:!o.urgent}); }
   else if(a==='edit'){ orderForm(o); }
 });
