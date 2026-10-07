@@ -171,6 +171,27 @@ svg{display:block}
 .go.light{background:var(--surface);color:var(--ink)}
 .card.urgent .go.light{background:var(--surface)}
 .printbar{display:flex;gap:10px;margin:0 0 14px}
+#sheet.sheet{background:rgba(242,242,244,.96)}
+.dt .ono-row{margin-top:12px}
+.dcard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-top:12px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.dh{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:800;color:var(--ink2);margin-bottom:8px}
+.dh span{font-weight:700;color:var(--ink3)}
+.dcard .items{margin-top:0}
+.drow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.drow span{color:var(--ink2)}
+.drow:last-of-type{border-bottom:0}
+.dempty{color:var(--ink3);font-size:14px}
+.tl{display:flex;flex-direction:column}
+.tli{display:flex;gap:12px;position:relative;padding:0 0 14px}
+.tli:last-child{padding-bottom:0}
+.tli i{flex:none;width:10px;height:10px;border-radius:50%;background:#C7C7CC;margin-top:6px;position:relative;z-index:1}
+.tli:not(:last-child)::before{content:"";position:absolute;left:4.5px;top:16px;bottom:-2px;width:1px;background:var(--line)}
+.tli.now i{background:var(--ink)}
+.tli b{display:block;font-size:15px}
+.tli span{font-size:13px;color:var(--ink3)}
+.tag.st-gray{background:var(--surface);color:var(--ink2)}
+.tag.st-dark{background:var(--ink);color:#fff}
+.tag.st-green{background:var(--green-bg);color:var(--green)}
 .who{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .who span{display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;border-radius:999px;background:var(--surface);font-size:14px;color:var(--ink2)}
 .who svg{width:17px;height:17px;color:var(--ink)}
@@ -800,6 +821,26 @@ function peopleSheet(list){
 function openPeople(){ call('apiPeople').then(peopleSheet).catch(function(e){toast(e.message)}); }
 
 /* ---------- order form / detail ---------- */
+function orderDetail(o){
+  var p=PLATFORMS[o.platform]||{name:o.platform==='shopee'?'蝦皮':o.platform,color:'#888',ink:'#fff'};
+  var items=parseItems(o.items), qty=items.reduce(function(a,it){return a+it.qty},0);
+  var st=isShipped(o)?['已出貨','green']:isPacked(o)?['已包好','dark']:['待包貨','gray'];
+  var hist=(o.history||[]).slice().reverse();
+  openSheet('<div class="dt">'+
+    '<div class="c-head"><span class="tag" style="background:'+p.color+';color:'+p.ink+'">'+p.name+'</span>'+
+      (o.urgent&&!isShipped(o)?'<span class="tag red">急單</span>':'')+dueTag(o)+'<span class="tag st-'+st[1]+'">'+st[0]+'</span></div>'+
+    '<div class="ono-row"><span class="ono">'+esc(o.orderNo||'（未填編號）')+'</span>'+(o.orderNo?'<button class="icon-btn" id="dCopy" aria-label="複製編號">'+ICON.copy+'</button>':'')+'</div>'+
+    '<div class="dcard"><div class="dh">商品<span>共 '+qty+' 件</span></div>'+
+      (items.length?'<div class="items">'+items.map(function(it){var l=locOf(it.name);return '<div class="item">'+thumb(it.name)+'<div class="itx"><div class="iname">'+esc(it.name)+'</div><div class="imeta">'+(l?'<span class="loc">'+esc(l)+'</span>':'')+'<span class="iq">× '+it.qty+'</span></div></div></div>'}).join('')+'</div>':'<div class="dempty">沒有商品資料</div>')+'</div>'+
+    '<div class="dcard"><div class="dh">寄送</div>'+
+      '<div class="drow"><span>下單時間</span><b>'+when(o.createdAt)+'</b></div>'+
+      (o.note?'<div class="note">'+esc(o.note)+'</div>':'')+'</div>'+
+    '<div class="dcard"><div class="dh">進度紀錄</div><div class="tl">'+
+      (hist.length?hist.map(function(h,i){return '<div class="tli'+(i===0?' now':'')+'"><i></i><div><b>'+esc(h.s)+'</b><span>'+esc(h.by||'')+' · '+when(h.at)+'</span></div></div>'}).join(''):'<div class="dempty">還沒有紀錄</div>')+
+    '</div></div>'+
+    '<div class="row2"><button class="btn-ghost" data-close>關閉</button></div></div>');
+  var c=$('dCopy'); if(c) c.onclick=function(){ copyText(o.orderNo).then(function(){toast('已複製 '+o.orderNo)}); };
+}
 function orderForm(o){
   var editing=!!o; o=o||{platform:'',orderNo:'',items:'',note:'',urgent:false,shipBy:defaultShipBy(),photos:[]};
   var pf=o.platform, urgent=!!o.urgent, shipBy=o.shipBy||defaultShipBy();
@@ -936,7 +977,7 @@ $('main').addEventListener('click',function(e){
   else if(a==='shipped'){ quick(id,3,'已出貨 ✓',true); }
   else if(a==='print'){ openPrint([o]); }
   else if(a==='urgent'){ o.urgent=!o.urgent; render(); act('apiUpdate',id,{urgent:o.urgent}); }
-  else if(a==='edit'){ orderForm(o); }
+  else if(a==='edit'){ orderDetail(o); }
 });
 document.addEventListener('touchstart',function(){},{passive:true});
 document.addEventListener('pointerdown',function(e){ var t=e.target.closest('button,a,.prow'); if(!t) return; t.classList.add('tap'); setTimeout(function(){t.classList.remove('tap')},220); },true);
