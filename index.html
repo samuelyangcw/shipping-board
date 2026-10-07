@@ -178,6 +178,24 @@ svg{display:block}
 .go.light{background:var(--surface);color:var(--ink)}
 .card.urgent .go.light{background:var(--surface)}
 .printbar{display:flex;gap:10px;margin:0 0 14px}
+.offline{display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding:11px 14px;border-radius:14px;background:#FFF4E5;color:#7A4A00;font-size:13.5px;line-height:1.45}
+.offline b{display:block;font-size:14.5px;color:#5C3700}
+#scan{position:fixed;inset:0;z-index:60;background:#000;display:none;flex-direction:column;color:#fff}
+#scan.show{display:flex}
+#scan video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#scan .sc-top{position:relative;z-index:2;padding:max(16px,env(safe-area-inset-top)) 18px 14px;background:linear-gradient(rgba(0,0,0,.65),rgba(0,0,0,0))}
+#scan .sc-top small{display:block;font-size:13px;opacity:.75}
+#scan .sc-top b{font:800 22px/1.25 ui-monospace,Menlo,monospace}
+#scan .sc-frame{position:relative;z-index:2;margin:auto;width:78%;max-width:340px;aspect-ratio:1.6;border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);border:3px solid rgba(255,255,255,.9);transition:border-color .25s ease}
+#scan.ok .sc-frame{border-color:#34C759}
+#scan.bad .sc-frame{border-color:#FF3B30}
+#scan .sc-bot{position:relative;z-index:2;padding:16px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.8))}
+#scan .sc-msg{min-height:48px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);font-size:15px;font-weight:700;line-height:1.4}
+#scan.ok .sc-msg{background:rgba(52,199,89,.9)}
+#scan.bad .sc-msg{background:rgba(255,59,48,.92)}
+#scan .sc-btns{display:flex;gap:10px;margin-top:10px}
+#scan .sc-btns button{flex:1;padding:14px 8px;border-radius:14px;background:rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:15px}
+#scan .sc-btns button.pri{background:#fff;color:#000}
 #sheet.sheet{background:rgba(242,242,244,.96)}
 .dt .ono-row{margin-top:12px}
 .dcard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-top:12px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
@@ -348,6 +366,11 @@ textarea.inp{min-height:88px;resize:vertical}
 
 <div class="mask" id="mask"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
+<div id="scan"><video id="scVideo" playsinline muted></video>
+  <div class="sc-top"><small>掃描這一包的寄件單條碼</small><b id="scNo"></b></div>
+  <div class="sc-frame"></div>
+  <div class="sc-bot"><div class="sc-msg" id="scMsg">把寄件單上的條碼對準框框</div><div class="sc-btns" id="scBtns"></div></div>
+</div>
 <input type="file" id="cam" accept="image/*" capture="environment" style="display:none">
 <div id="printArea"></div>
 
@@ -482,7 +505,7 @@ function renderHeader(){
   var dueToday=active.filter(function(o){var u=dueOf(o);return u==='today'||u==='over'}).length;
   var left=cutoffMin()-nowMin();
   var cut=state.settings.cutoff||'14:00';
-  $('cutoff').innerHTML = true ? '' : (left>0
+  $('cutoff').innerHTML = true ? offlineHTML() : (left>0
     ? '<div class="cutoff">'+ICON.clock+'<span>'+cut+' 截單</span><span class="sub">還有 '+(left>=60?Math.floor(left/60)+' 小時 ':'')+(left%60)+' 分 · 今天要寄 '+dueToday+' 筆</span></div>'
     : '<div class="cutoff closed">'+ICON.clock+'<span>今天已截單</span><span class="sub">之後的訂單明天寄 · 今天還有 '+dueToday+' 筆沒寄</span></div>');
   var over=active.filter(function(o){return dueOf(o)==='over'}).length;
@@ -583,7 +606,7 @@ function cardHTML(o,newIdx){
     '<div class="prog-l"><span>'+(last&&isTodo(o)?esc(last.s)+' · '+esc(last.by)+' '+when(last.at):'')+'</span>'+
     ((o.photos||[]).length?'<span></span>':'')+'</div>';
   if(isTodo(o)){
-    h += '<button class="go" data-act="ship">'+ICON.check+'已包好</button>'+
+    h += '<button class="go" data-act="ship">'+ICON.check+'掃寄件單 · 已包好</button>'+
       '<div class="sub"><button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button><button data-act="edit">詳細</button></div>';
   } else if(isPacked(o)){
     h += '<button class="go light" data-act="print">'+ICON.print+'列印標籤</button>'+
@@ -654,6 +677,8 @@ function openPrint(list){
 function apply(data){
   if(!data) return;
   state.orders = data.orders||[];
+  if(!data._cached){ lsSet('pb_cache',JSON.stringify({orders:data.orders,settings:data.settings,shelves:data.shelves,at:Date.now()})); state.offline=false; state.dataAt=Date.now(); }
+  overlayQ();
   if(data.me){ state.me=data.me; lsSet('pb_me',JSON.stringify(data.me)); }
   if(data.settings) state.settings=data.settings;
   if(data.shelves) state.shelves=data.shelves;
@@ -661,12 +686,25 @@ function apply(data){
   var sig=JSON.stringify([data.orders,data.settings,data.shelves,state.me&&state.me.name]);
   var same=state.loaded&&state.loggedIn&&sig===state._sig; state._sig=sig;
   state.loggedIn=true; state.loaded=true;
-  $('sync').textContent='最後同步 '+hm(Date.now());
+  $('sync').textContent=(state.offline?'離線資料 ':'最後同步 ')+hm(state.dataAt||Date.now());
   if(same) renderHeader(); else render();
 }
+/* ---------- 斷線保護：系統連不上也不影響出貨 ---------- */
+function getQ(){ try{ return JSON.parse(lsGet('pb_q')||'[]'); }catch(e){ return []; } }
+function setQ(q){ lsSet('pb_q',JSON.stringify(q)); }
+function overlayQ(){ getQ().forEach(function(op){ var o=findOrder(op.id); if(!o||o.status===op.status) return; o.status=op.status; o.updatedAt=op.at;
+  var h={s:op.status>=3?'已寄出':op.status>=1?'已包好':'改回待包貨',by:op.by,at:op.at,pending:1}; if(op.code) h.code=op.code; o.history=(o.history||[]).concat([h]); }); }
+function flushQ(){ var q=getQ(); if(!q.length) return Promise.resolve();
+  var op=q[0]; return call('apiSetStatus',op.id,op.status,op.code||'').then(function(){ setQ(getQ().slice(1)); return flushQ(); })
+    .catch(function(e){ if(e&&e.name==='TypeError') throw e; setQ(getQ().slice(1)); toast('有一筆離線紀錄沒同步成功：'+(e.message||'')); return flushQ(); }); }
+function offlineHTML(){ if(!state.offline||!state.loggedIn) return '';
+  var n=getQ().length; return '<div class="offline">⚠️<div><b>暫時連不上系統</b>畫面是 '+hm(state.dataAt||Date.now())+' 的資料，照常包貨就好'+(n?'。你按的 '+n+' 筆已先存在這支手機，恢復連線會自動同步':'')+'。寄件單請照常從 Shopline 後台印。</div></div>'; }
+window.addEventListener('online',function(){ if(state.loggedIn) load(); });
 function load(){
   if(!state.token) return Promise.resolve();
-  return call('apiList').then(apply).catch(function(e){ if(state.token) toast('讀取失敗，請稍後再試'); console.log(e)});
+  return flushQ().then(function(){ return call('apiList'); }).then(apply).catch(function(e){ console.log(e);
+    if(e&&e.name==='TypeError'){ if(!state.offline){ state.offline=true; renderHeader(); } }
+    else if(state.token) toast('讀取失敗，請稍後再試'); });
 }
 function act(fn){
   if(state.busy) return Promise.resolve();
@@ -847,7 +885,7 @@ function orderDetail(o){
       '<div class="drow"><span>下單時間</span><b>'+when(o.createdAt)+'</b></div>'+
       (o.note?'<div class="note">'+esc(o.note)+'</div>':'')+'</div>'+
     '<div class="dcard"><div class="dh">進度紀錄</div><div class="tl">'+
-      (hist.length?hist.map(function(h,i){return '<div class="tli'+(i===0?' now':'')+'"><i></i><div><b>'+esc(h.s)+'</b><span>'+esc(h.by||'')+' · '+when(h.at)+'</span></div></div>'}).join(''):'<div class="dempty">還沒有紀錄</div>')+
+      (hist.length?hist.map(function(h,i){return '<div class="tli'+(i===0?' now':'')+'"><i></i><div><b>'+esc(h.s)+'</b><span>'+esc(h.by||'')+' · '+when(h.at)+(h.code?' · 寄件單 …'+esc(String(h.code).slice(-6)):'')+(h.pending?' · 待同步':'')+'</span></div></div>'}).join(''):'<div class="dempty">還沒有紀錄</div>')+
     '</div></div>'+
     '<div class="row2"><button class="btn-ghost" data-close>關閉</button></div></div>');
   var c=$('dCopy'); if(c) c.onclick=function(){ copyText(o.orderNo).then(function(){toast('已複製 '+o.orderNo)}); };
@@ -941,17 +979,52 @@ $('cam').addEventListener('change',function(){
   }).catch(function(e){ toast(e.message||'照片上傳失敗'); });
 });
 function setLocal(id,status){ var o=findOrder(id); if(!o) return null; var prev=o.status; o.status=status; o.updatedAt=Date.now(); o.history=(o.history||[]).concat([{s:status>=3?'已寄出':status>=1?'已包好':'改回待包貨',by:state.me?state.me.name:'',at:Date.now()}]); return prev; }
-function quick(id,status,msg,undoable){
-  var prev=setLocal(id,status); render(); state.syncing=(state.syncing||0)+1;
-  call('apiSetStatus',id,status).then(function(d){ state.syncing--; if(!state.syncing) apply(d); })
-    .catch(function(e){ state.syncing--; setLocal(id,prev); render(); toast('沒有成功，請再按一次'); });
+function quick(id,status,msg,undoable,code){
+  var prev=setLocal(id,status); if(code){ var _o=findOrder(id); if(_o) _o.history[_o.history.length-1].code=code; } render(); state.syncing=(state.syncing||0)+1;
+  call('apiSetStatus',id,status,code||'').then(function(d){ state.syncing--; if(!state.syncing) apply(d); })
+    .catch(function(e){ state.syncing--;
+      if(e&&e.name==='TypeError'){ var q=getQ(); q.push({id:id,status:status,code:code||'',by:state.me?state.me.name:'',at:Date.now()}); setQ(q); state.offline=true; renderHeader(); toast('網路不穩：已先記在這支手機，恢復連線會自動同步'); return; }
+      setLocal(id,prev); render(); toast((e&&e.message)||'沒有成功，請再按一次'); });
   toast(msg, undoable?function(){ quick(id,prev,'已復原',false); }:null);
 }
 function shipOut(id){
   var el=document.querySelector('.card[data-id="'+id+'"]');
   if(el) el.classList.add('leaving');
-  setTimeout(function(){ quick(id,1,'已包好 ✓',true); var o=findOrder(id); if(o) setTimeout(function(){ openPrint([o]); },350); },400);
+  var code=shipOut.code||''; shipOut.code='';
+  setTimeout(function(){ quick(id,1,'已包好 ✓',true,code); },400);
 }
+/* ---------- 掃寄件單核對（只在手機上比對，不需要網路） ---------- */
+var SC={o:null,reader:null,lock:false};
+function loadZX(){ if(window.ZXing) return Promise.resolve();
+  return new Promise(function(ok,no){ var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js'; s.onload=ok; s.onerror=no; document.head.appendChild(s); }); }
+function scBtns(list){ $('scBtns').innerHTML=list.map(function(b,i){return '<button class="'+(b[2]||'')+'" data-sc="'+i+'">'+b[0]+'</button>'}).join(''); SC.btns=list; }
+function scMsg(cls,html){ var el=$('scan'); el.classList.remove('ok','bad'); if(cls) el.classList.add(cls); $('scMsg').innerHTML=html; }
+function scStop(){ try{ SC.reader&&SC.reader.reset(); }catch(e){} SC.reader=null; $('scan').classList.remove('show','ok','bad'); }
+function scDone(code){ var id=SC.o.id; scStop(); if(navigator.vibrate) navigator.vibrate(15); shipOut.code=code||''; shipOut(id); }
+function scDirect(){ scDone(''); }
+function openScan(o){
+  SC.o=o; SC.lock=false; $('scNo').textContent=(PLATFORMS[o.platform]||{name:''}).name+' '+(o.orderNo||'');
+  $('scan').classList.add('show'); scMsg('','正在開啟相機…');
+  scBtns([['取消',scStop],['不掃，直接標記已包好',scDirect]]);
+  loadZX().then(function(){
+    SC.reader=new ZXing.BrowserMultiFormatReader();
+    return SC.reader.decodeFromConstraints({video:{facingMode:'environment'}},$('scVideo'),function(r){ if(r&&!SC.lock) scCheck(String(r.getText()||'').trim()); });
+  }).then(function(){ scMsg('','把寄件單上的條碼對準框框'); })
+    .catch(function(){ scMsg('bad','相機或掃描器開不起來（可能是沒網路或沒給相機權限）。<br>不影響出貨，直接標記就好。'); scBtns([['取消',scStop],['直接標記已包好',scDirect,'pri']]); });
+}
+function scCheck(code){
+  if(!code) return; SC.lock=true; var o=SC.o;
+  var other=state.orders.filter(function(x){ return x.id!==o.id && x.orderNo && x.orderNo.length>=6 && code.indexOf(x.orderNo)>=0; })[0];
+  var used=state.orders.filter(function(x){ return x.id!==o.id && (x.history||[]).some(function(h){return h.code===code}); })[0];
+  var bad = other ? '這張是 <b>'+esc(other.orderNo)+'</b> 的寄件單，不是這一包！' : used ? '這張寄件單已經貼在 <b>'+esc(used.orderNo)+'</b> 了，可能重複印或貼錯' : '';
+  if(bad){ if(navigator.vibrate) navigator.vibrate([80,60,80,60,200]); scMsg('bad','✕ '+bad);
+    scBtns([['重新掃描',function(){ scMsg('','把寄件單上的條碼對準框框'); scBtns([['取消',scStop],['不掃，直接標記已包好',scDirect]]); SC.lock=false; },'pri'],['我確定沒錯',function(){ scDone(code); }]]); return; }
+  var match = o.orderNo && code.indexOf(o.orderNo)>=0;
+  scMsg('ok','✓ '+(match?'寄件單和這筆訂單相符':'已記錄寄件單 …'+esc(code.slice(-6))));
+  setTimeout(function(){ scDone(code); },700);
+}
+$('scBtns').addEventListener('click',function(e){ var b=e.target.closest('[data-sc]'); if(b&&SC.btns) SC.btns[+b.dataset.sc][1](); });
+
 function askPhoto(o){
   openSheet('<h2>拍封箱照</h2><div class="hint">對著封好的包裹拍一張（看得到寄件單），客人說少件時可以拿出來證明。</div>'+
     '<div class="row2"><button class="btn-main" id="pTake">'+'打開相機</button></div>'+
@@ -989,7 +1062,7 @@ $('main').addEventListener('click',function(e){
   var a=b.dataset.act;
   if(a==='copy'){ copyText(o.orderNo).then(function(){toast('已複製 '+o.orderNo)}); }
   else if(a==='backend'){ copyText(o.orderNo); window.open(PLATFORMS[o.platform].link(o.orderNo),'_blank'); toast('編號已複製，到後台貼上搜尋'); }
-  else if(a==='ship'){ if(navigator.vibrate) navigator.vibrate(12); shipOut(id); }
+  else if(a==='ship'){ if(navigator.vibrate) navigator.vibrate(12); openScan(o); }
   else if(a==='unship'){ quick(id,1,'已改回已包好',false); }
   else if(a==='unpack'){ quick(id,0,'已改回待包貨',false); }
   else if(a==='shipped'){ quick(id,3,'已出貨 ✓',true); }
@@ -1057,7 +1130,7 @@ window.addEventListener('scroll',function(){ $('top').classList.toggle('shadow',
 /* ---------- start ---------- */
 state.token=lsGet('pb_token');
 try{ state.me=JSON.parse(lsGet('pb_me')||'null'); }catch(e){}
-if(state.token){ state.loggedIn=true; }
+if(state.token){ state.loggedIn=true; try{ var _c=JSON.parse(lsGet('pb_cache')||'null'); if(_c&&_c.orders){ state.dataAt=_c.at; _c._cached=1; apply(_c); } }catch(e){} }
 render();
 if(state.token){ load(); } else { showLogin(); }
 setInterval(function(){ if(state.loggedIn && !document.hidden && !state.busy && !state.syncing && !$('mask').classList.contains('show')) load(); else renderHeader(); }, 15000);
