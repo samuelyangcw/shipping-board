@@ -606,7 +606,7 @@ function cardHTML(o,newIdx){
     '<div class="prog-l"><span>'+(last&&isTodo(o)?esc(last.s)+' · '+esc(last.by)+' '+when(last.at):'')+'</span>'+
     ((o.photos||[]).length?'<span></span>':'')+'</div>';
   if(isTodo(o)){
-    h += '<button class="go" data-act="ship">'+ICON.check+'掃寄件單 · 已包好</button>'+
+    h += '<button class="go" data-act="ship">'+ICON.check+'已包好</button>'+
       '<div class="sub"><button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button><button data-act="edit">詳細</button></div>';
   } else if(isPacked(o)){
     h += '<button class="go light" data-act="print">'+ICON.print+'列印標籤</button>'+
@@ -1062,7 +1062,7 @@ $('main').addEventListener('click',function(e){
   var a=b.dataset.act;
   if(a==='copy'){ copyText(o.orderNo).then(function(){toast('已複製 '+o.orderNo)}); }
   else if(a==='backend'){ copyText(o.orderNo); window.open(PLATFORMS[o.platform].link(o.orderNo),'_blank'); toast('編號已複製，到後台貼上搜尋'); }
-  else if(a==='ship'){ if(navigator.vibrate) navigator.vibrate(12); openScan(o); }
+  else if(a==='ship'){ if(navigator.vibrate) navigator.vibrate(12); shipOut(id); }
   else if(a==='unship'){ quick(id,1,'已改回已包好',false); }
   else if(a==='unpack'){ quick(id,0,'已改回待包貨',false); }
   else if(a==='shipped'){ quick(id,3,'已出貨 ✓',true); }
