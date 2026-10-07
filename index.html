@@ -55,6 +55,13 @@ svg{display:block}
 .stat b{display:block;font-size:26px;font-weight:800;line-height:1.05;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--ink2);font-weight:600}
 .stat.hl b{color:var(--green)}
+.stat{cursor:pointer;transition:background .3s ease,color .3s ease,transform .18s ease}
+.stat:active{transform:scale(.96)}
+.stat.on{background:var(--ink);color:#fff}
+.stat.on span{color:rgba(255,255,255,.75)}
+.stat.on.hl b{color:#5BE59A}
+.sfbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;padding:10px 14px;border-radius:14px;background:var(--surface);font-size:14px;font-weight:700}
+.sfbar button{font-size:14px;font-weight:700;color:var(--ink2);padding:4px 8px;border-radius:999px;background:#fff}
 
 .chips{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .chips::-webkit-scrollbar{display:none}
@@ -484,6 +491,8 @@ function renderHeader(){
   if(!$('stats').children.length){
     $('stats').innerHTML=['待包貨','已包好','逾期','今天已出貨'].map(function(l,i){return '<div class="stat'+(i===3?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
   }
+  var on = state.sf==='over'?2 : state.sf==='shipToday'?3 : state.view==='packed'?1 : state.view==='ship'?0 : -1;
+  [].forEach.call($('stats').children,function(el,i){ el.dataset.stat=i; el.classList.toggle('on',i===on); });
   var bs=$('stats').querySelectorAll('b'); [todoN,packedN,over,shippedToday].forEach(function(v,i){tween(bs[i],v)});
   var pool = state.orders.filter(state.view==='done'?isShipped:state.view==='packed'?isPacked:isTodo);
   var chips=[['all','全部']].concat(Object.keys(PLATFORMS).map(function(k){return [k,PLATFORMS[k].name]}));
@@ -522,7 +531,9 @@ function render(){
   if(state.view==='pick') return renderPick();
   var done = state.view==='done', packedV = state.view==='packed';
   var rows = state.orders.filter(function(o){
-    if(!(done?isShipped(o):packedV?isPacked(o):isTodo(o))) return false;
+    if(state.sf==='over'){ if(isShipped(o)||dueOf(o)!=='over') return false; }
+    else if(state.sf==='shipToday'){ if(!(isShipped(o)&&isToday(o.updatedAt))) return false; }
+    else if(!(done?isShipped(o):packedV?isPacked(o):isTodo(o))) return false;
     return state.pf==='all' || o.platform===state.pf;
   });
   if(!done){
@@ -536,7 +547,7 @@ function render(){
     return;
   }
   var i=0;
-  var bar='';
+  var bar=state.sf?'<div class="sfbar"><span>'+(state.sf==='over'?'只看逾期的訂單':'只看今天出貨的訂單')+'</span><button data-sfclear>顯示全部</button></div>':'';
   if(packedV){ bar='<div class="printbar">'+Object.keys(PLATFORMS).map(function(k){ var n=state.orders.filter(function(o){return isPacked(o)&&o.platform===k}).length;
       return n?'<button data-printpf="'+k+'"><i style="background:'+PLATFORMS[k].color+'"></i>'+ICON.print+'印'+PLATFORMS[k].name+' '+n+' 張</button>':''; }).join('')+'</div>'; }
   m.innerHTML=bar+'<div class="list view">'+rows.map(function(o){ var isNew=!state.seen[o.id]; state.seen[o.id]=1; return cardHTML(o,isNew?i++:-1); }).join('')+'</div>';
@@ -955,8 +966,15 @@ $('avatar').onclick=menu;
 $('tabbar').addEventListener('click',function(e){
   var b=e.target.closest('[data-view]'); if(!b) return;
   var v=b.dataset.view; if(v==='me'){ menu(); return; }
-  if(state.view!==v){ state.view=v; state.seen={}; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  if(state.view!==v||state.sf){ state.view=v; state.sf=null; state.seen={}; render(); window.scrollTo({top:0,behavior:'smooth'}); }
 });
+$('stats').addEventListener('click',function(e){
+  var t=e.target.closest('[data-stat]'); if(!t||!state.loggedIn) return; var i=+t.dataset.stat;
+  var nv=['ship','packed','ship','done'][i], nf=[null,null,'over','shipToday'][i];
+  if(state.view===nv && state.sf===nf && nf){ nf=null; }
+  state.view=nv; state.sf=nf; state.seen={}; render(); window.scrollTo({top:0,behavior:'smooth'});
+});
+$('main').addEventListener('click',function(e){ if(e.target.closest('[data-sfclear]')){ state.sf=null; state.seen={}; render(); } });
 $('chips').addEventListener('click',function(e){var b=e.target.closest('[data-pf]');if(!b)return;state.pf=b.dataset.pf;state.seen={};render()});
 document.addEventListener('click',function(e){ var im=e.target.closest('img.pimg[data-full]'); if(im && !e.target.closest('.irow')){ e.stopPropagation(); openPhoto(im.dataset.full, im.dataset.title); } },true);
 $('main').addEventListener('click',function(e){
@@ -1011,7 +1029,7 @@ window.addEventListener('scroll',function(){ $('top').classList.toggle('shadow',
     if(!moved||idx<0){ return; } skip=true; setTimeout(function(){skip=false},450);
     var b=tb.querySelectorAll('.tb')[idx], v=b&&b.dataset.view;
     if(v==='me'){ renderTabs(); menu(); }
-    else if(v && state.view!==v){ state.view=v; state.seen={}; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+    else if(v && (state.view!==v||state.sf)){ state.view=v; state.sf=null; state.seen={}; render(); window.scrollTo({top:0,behavior:'smooth'}); }
     else renderTabs(); }
   tb.addEventListener('touchend',end); tb.addEventListener('touchcancel',end);
   tb.addEventListener('click',function(e){ if(skip){ e.stopPropagation(); e.preventDefault(); } },true);
