@@ -539,7 +539,7 @@ function render(){
   if(!done){
     var rank={over:0,today:1,later:2};
     rows.sort(function(a,b){
-      return (b.urgent-a.urgent) || ((rank[dueOf(a)]==null?3:rank[dueOf(a)])-(rank[dueOf(b)]==null?3:rank[dueOf(b)])) || (a.createdAt-b.createdAt);
+      return (b.urgent-a.urgent) || ((rank[dueOf(a)]==null?3:rank[dueOf(a)])-(rank[dueOf(b)]==null?3:rank[dueOf(b)])) || (b.createdAt-a.createdAt);
     });
   } else rows.sort(function(a,b){return b.updatedAt-a.updatedAt});
   if(!rows.length){
