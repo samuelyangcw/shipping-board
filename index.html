@@ -638,7 +638,7 @@ function cardHTML(o,newIdx){
     ((o.photos||[]).length?'<span></span>':'')+'</div>';
   if(isTodo(o)){
     h += '<button class="go" data-act="ship">'+ICON.check+'已包好</button>'+
-      '<div class="sub"><button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button><button data-act="edit">詳細</button></div>';
+      '<div class="sub">'+(isAdmin()?'<button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button>':'')+'<button data-act="edit">詳細</button></div>';
   } else if(isPacked(o)){
     h += printHTML(o)+
       '<div class="sub"><button data-act="unpack">改回待包貨</button><button data-act="shipped">已出貨</button><button data-act="edit">詳細</button></div>';
@@ -1103,7 +1103,7 @@ $('main').addEventListener('click',function(e){
   else if(a==='unpack'){ quick(id,0,'已改回待包貨',false); }
   else if(a==='shipped'){ quick(id,3,'已出貨 ✓',true); }
   else if(a==='print'){ if(o.platform!=='web'){ toast('賣貨便寄件單請用賣貨便後台印'); return; } o.print={state:'queued',at:Date.now()}; render(); act('apiPrint',id).then(function(){ toast('已送去列印'); pollPrint(); }); }
-  else if(a==='urgent'){ o.urgent=!o.urgent; render(); act('apiUpdate',id,{urgent:o.urgent}); }
+  else if(a==='urgent'){ if(!isAdmin()){ toast('只有老闆可以設定急單'); return; } o.urgent=!o.urgent; render(); act('apiUpdate',id,{urgent:o.urgent}); }
   else if(a==='edit'){ orderDetail(o); }
 });
 document.addEventListener('touchstart',function(){},{passive:true});
