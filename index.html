@@ -178,6 +178,16 @@ svg{display:block}
 .go.light{background:var(--surface);color:var(--ink)}
 .card.urgent .go.light{background:var(--surface)}
 .printbar{display:flex;gap:10px;margin:0 0 14px}
+.agbar{display:flex;gap:12px;align-items:flex-start;margin:0 0 14px;padding:12px 14px;border-radius:16px;background:#FFF4E5;color:#7A4B00;font-size:13px;line-height:1.45}
+.agbar.on{background:var(--green-bg);color:var(--green)}
+.agbar i{flex:none;width:9px;height:9px;border-radius:50%;background:currentColor;margin-top:5px}
+.agbar b{display:block;font-size:15px}
+.pst{display:flex;align-items:center;gap:6px;margin-top:12px;padding:9px 12px;border-radius:12px;background:var(--surface);color:var(--ink2);font-size:13px;font-weight:600;line-height:1.4}
+.pst svg{width:16px;height:16px;flex:none}
+.pst.ok{background:var(--green-bg);color:var(--green)}
+.pst.bad{display:block;background:#FDECEC;color:#C0362C}
+.pst.run{color:var(--ink)}
+.go[disabled]{opacity:.5}
 .offline{display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding:11px 14px;border-radius:14px;background:#FFF4E5;color:#7A4A00;font-size:13.5px;line-height:1.45}
 .offline b{display:block;font-size:14.5px;color:#5C3700}
 #scan{position:fixed;inset:0;z-index:60;background:#000;display:none;flex-direction:column;color:#fff}
@@ -571,8 +581,7 @@ function render(){
   }
   var i=0;
   var bar=state.sf?'<div class="sfbar"><span>'+(state.sf==='over'?'只看逾期的訂單':'只看今天出貨的訂單')+'</span><button data-sfclear>顯示全部</button></div>':'';
-  if(packedV){ bar='<div class="printbar">'+Object.keys(PLATFORMS).map(function(k){ var n=state.orders.filter(function(o){return isPacked(o)&&o.platform===k}).length;
-      return n?'<button data-printpf="'+k+'"><i style="background:'+PLATFORMS[k].color+'"></i>'+ICON.print+'印'+PLATFORMS[k].name+' '+n+' 張</button>':''; }).join('')+'</div>'; }
+  if(packedV){ bar=agentBar(); }
   m.innerHTML=bar+'<div class="list view">'+rows.map(function(o){ var isNew=!state.seen[o.id]; state.seen[o.id]=1; return cardHTML(o,isNew?i++:-1); }).join('')+'</div>';
 }
 
@@ -589,6 +598,21 @@ function whoHTML(o){
   if(!pk&&!sh) return '';
   return '<div class="who">'+(pk?'<span>'+ICON.packed+'<b>'+esc(pk.by)+'</b> 包貨 <i>'+when(pk.at)+'</i></span>':'')+
     (sh?'<span>'+ICON.truck+'<b>'+esc(sh.by)+'</b> 出貨 <i>'+when(sh.at)+'</i></span>':'')+'</div>';
+}
+function agentOn(){ return state.agentSeen && Date.now()-state.agentSeen < 120000; }
+function agentBar(){
+  return '<div class="agbar'+(agentOn()?' on':'')+'"><i></i><div><b>列印電腦'+(agentOn()?'已連線':'沒有連線')+'</b>'+
+    (agentOn()?'官網訂單按「已包好」就會自動印寄件單':(state.agentSeen?'最後連線 '+when(state.agentSeen)+'。':'')+'寄件單請先從 Shopline 後台印，不影響出貨')+'</div></div>';
+}
+function printHTML(o){
+  if(o.platform!=='shopline') return '<div class="pst">賣貨便寄件單請用賣貨便後台印</div>';
+  var j=o.print, st=j&&j.state, t='';
+  if(st==='queued') t='<div class="pst run">'+ICON.print+'排隊中，等列印電腦'+(agentOn()?'':'（列印電腦沒有連線）')+'</div>';
+  else if(st==='working') t='<div class="pst run">'+ICON.print+'列印中…</div>';
+  else if(st==='done') t='<div class="pst ok">'+ICON.check+'寄件單已送印 '+when(j.at)+'</div>';
+  else if(st==='failed') t='<div class="pst bad">⚠️ 列印失敗：'+esc(j.msg||'')+'<br>可以按重印，或到 Shopline 後台手動印</div>';
+  var busy=st==='queued'||st==='working';
+  return t+'<button class="go light" data-act="print"'+(busy?' disabled':'')+'>'+ICON.print+(st==='done'||st==='failed'?'重印寄件單':busy?'列印中…':'列印寄件單')+'</button>';
 }
 function cardHTML(o,newIdx){
   var p = PLATFORMS[o.platform]||{name:o.platform==='shopee'?'蝦皮':o.platform,color:'#888',ink:'#fff',bar:'#888'};
@@ -609,7 +633,7 @@ function cardHTML(o,newIdx){
     h += '<button class="go" data-act="ship">'+ICON.check+'已包好</button>'+
       '<div class="sub"><button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button><button data-act="edit">詳細</button></div>';
   } else if(isPacked(o)){
-    h += '<button class="go light" data-act="print">'+ICON.print+'列印標籤</button>'+
+    h += printHTML(o)+
       '<div class="sub"><button data-act="unpack">改回待包貨</button><button data-act="shipped">已出貨</button><button data-act="edit">詳細</button></div>';
   } else {
     h += '<div class="sub"><button data-act="unship">改回已包好</button><button data-act="edit">詳細</button></div>';
@@ -682,6 +706,8 @@ function apply(data){
   if(data.me){ state.me=data.me; lsSet('pb_me',JSON.stringify(data.me)); }
   if(data.settings) state.settings=data.settings;
   if(data.shelves) state.shelves=data.shelves;
+  if('agentSeen' in data) state.agentSeen=data.agentSeen;
+  pollPrint();
   if(data.catalogVer) setTimeout(function(){syncCatalog(data.catalogVer)},0);
   var sig=JSON.stringify([data.orders,data.settings,data.shelves,state.me&&state.me.name]);
   var same=state.loaded&&state.loggedIn&&sig===state._sig; state._sig=sig;
@@ -714,6 +740,8 @@ function act(fn){
     toast((e&&e.message)?e.message:'操作失敗，請再按一次'); console.log(e); render();
   }).then(function(){state.busy=false});
 }
+function pollPrint(){ if(state._pp) return; if(!state.orders.some(function(o){return o.print&&(o.print.state==='queued'||o.print.state==='working')})) return;
+  state._pp=setTimeout(function(){ state._pp=null; if(!state.busy&&!state.syncing) load(); else pollPrint(); },5000); }
 function findOrder(id){return state.orders.filter(function(o){return o.id===id})[0]}
 
 /* ---------- sheet ---------- */
@@ -991,7 +1019,8 @@ function shipOut(id){
   var el=document.querySelector('.card[data-id="'+id+'"]');
   if(el) el.classList.add('leaving');
   var code=shipOut.code||''; shipOut.code='';
-  setTimeout(function(){ quick(id,1,'已包好 ✓',true,code); },400);
+  var o=findOrder(id), sl=o&&o.platform==='shopline'&&!(o.print&&o.print.state==='done');
+  setTimeout(function(){ quick(id,1,sl?'已包好 ✓ 寄件單送去列印':'已包好 ✓',true,code); if(sl) setTimeout(pollPrint,3000); },400);
 }
 /* ---------- 掃寄件單核對（只在手機上比對，不需要網路） ---------- */
 var SC={o:null,reader:null,lock:false};
@@ -1066,7 +1095,7 @@ $('main').addEventListener('click',function(e){
   else if(a==='unship'){ quick(id,1,'已改回已包好',false); }
   else if(a==='unpack'){ quick(id,0,'已改回待包貨',false); }
   else if(a==='shipped'){ quick(id,3,'已出貨 ✓',true); }
-  else if(a==='print'){ openPrint([o]); }
+  else if(a==='print'){ if(o.platform!=='shopline'){ toast('賣貨便寄件單請用賣貨便後台印'); return; } o.print={state:'queued',at:Date.now()}; render(); act('apiPrint',id).then(function(){ toast('已送去列印'); pollPrint(); }); }
   else if(a==='urgent'){ o.urgent=!o.urgent; render(); act('apiUpdate',id,{urgent:o.urgent}); }
   else if(a==='edit'){ orderDetail(o); }
 });
