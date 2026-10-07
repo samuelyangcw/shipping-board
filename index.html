@@ -24,7 +24,7 @@
   --ease:cubic-bezier(.25,.1,.25,1); --spring:cubic-bezier(.25,.1,.25,1);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Helvetica Neue","Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Helvetica Neue","Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0;transition:filter .18s ease,transform .18s ease,background .25s ease,opacity .25s ease}
 button:active,button.tap,.prow.tap,a.tap{filter:brightness(.82);transform:scale(.97)}
 .go:active,.go.tap,.btn-main:active,.btn-main.tap{filter:brightness(1.6) contrast(.85)}
@@ -90,7 +90,7 @@ svg{display:block}
 .items{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .item{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}
 .item{align-items:center;gap:12px}
-.pimg{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--surface);flex:none;display:block;cursor:zoom-in;animation:imgIn .5s var(--ease)}
+.pimg{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--surface);flex:none;display:block;cursor:zoom-in;}
 @keyframes imgIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
 .pimg.sm{width:46px;height:46px;border-radius:10px}
 .pimg.ph{display:grid;place-items:center;color:var(--ink3);cursor:default;animation:none}
@@ -160,13 +160,19 @@ svg{display:block}
 .btn-wide.light{background:var(--surface)}
 
 /* ---------- bottom bar ---------- */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:8;background:rgba(255,255,255,.92);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);border-top:1px solid var(--line);padding:6px 10px calc(6px + env(safe-area-inset-bottom))}
-.tabbar-in{max-width:640px;margin:0 auto;display:flex}
-.tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:11px;font-weight:700;color:var(--ink3);transition:color .2s}
-.tb svg{transition:transform .3s var(--spring)}
+.tabbar{position:fixed;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom));z-index:8;padding:0 14px;pointer-events:none}
+.tabbar-in{pointer-events:auto;position:relative;max-width:520px;margin:0 auto;display:flex;padding:5px;border-radius:999px;background:rgba(250,250,250,.72);-webkit-backdrop-filter:saturate(190%) blur(26px);backdrop-filter:saturate(190%) blur(26px);border:.5px solid rgba(0,0,0,.08);box-shadow:0 10px 34px rgba(0,0,0,.13),0 1px 3px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9)}
+.tb-pill{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px) / 5);border-radius:999px;background:rgba(0,0,0,.075);box-shadow:inset 0 .5px 0 rgba(255,255,255,.7);transition:transform .45s cubic-bezier(.25,.1,.25,1)}
+.tb{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0 6px;border-radius:999px;font-size:10.5px;font-weight:700;color:#48484A;transition:color .3s ease}
+.tb svg{width:23px;height:23px}
 .tb.on{color:var(--ink)}
-.tb.on svg{transform:translateY(-1px) scale(1.08)}
-.tb .badge{position:absolute;margin-left:22px;margin-top:-2px;background:var(--red);color:#fff;font-size:10px;border-radius:999px;padding:1px 5px;font-weight:800}
+.tb .badge{position:absolute;top:1px;left:calc(50% + 6px);background:var(--red);color:#fff;font-size:10px;line-height:15px;min-width:17px;text-align:center;border-radius:999px;padding:0 4px;font-weight:800}
+.tb .badge.dark{background:var(--ink)}
+.go.light{background:var(--surface);color:var(--ink)}
+.card.urgent .go.light{background:var(--surface)}
+.printbar{display:flex;gap:10px;margin:0 0 14px}
+.printbar button{flex:1;padding:14px 8px;border-radius:14px;background:var(--ink);color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:7px}
+.printbar button i{width:9px;height:9px;border-radius:50%;flex:none}
 .fab{position:fixed;right:max(18px,calc(50% - 302px));bottom:calc(78px + env(safe-area-inset-bottom));z-index:9;width:60px;height:60px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 10px 26px rgba(0,0,0,.25);transition:transform .25s var(--spring)}
 .fab:active{transform:scale(.9) rotate(90deg)}
 
@@ -235,9 +241,10 @@ textarea.inp{min-height:88px;resize:vertical}
 /* ---------- pull to refresh ---------- */
 .ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 18px);z-index:0;width:28px;height:28px;margin-left:-14px;display:grid;place-items:center;opacity:0;pointer-events:none}
 .ptr.anim{transition:opacity .35s ease}
+#ptrSpace{height:0;transition:height .45s cubic-bezier(.25,.1,.25,1)}
+#ptrSpace.on{height:58px}
 .ptr-spin{width:22px;height:22px;border-radius:50%;border:2.5px solid #E2E2E2;border-top-color:#8E8E93}
-#app{position:relative;z-index:1;background:var(--bg);will-change:transform}
-#app.anim{transition:transform .45s cubic-bezier(.25,.1,.25,1)}
+#app{position:relative;z-index:1;background:var(--bg)}
 .ptr.loading .ptr-spin{animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -272,6 +279,7 @@ textarea.inp{min-height:88px;resize:vertical}
 </head>
 <body>
 <div class="ptr" id="ptr"><div class="ptr-spin"></div></div>
+<div id="ptrSpace"></div>
 <div class="wrap" id="app">
   <div class="top" id="top">
     <div class="top-row">
@@ -319,6 +327,7 @@ var ICON = {
   list:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>',
   truck:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M2 6h12v10H2zM14 9h4l3 3v4h-7"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
   shirt:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg>',
+  packed:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"><path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8"/></svg>',
   me:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" stroke-linecap="round"/></svg>'
 };
 var LINKS = [
@@ -415,6 +424,9 @@ function tween(el,to){
 }
 
 /* ---------- header ---------- */
+function isTodo(o){return !o.status||o.status<1}
+function isPacked(o){return o.status===1||o.status===2}
+function isShipped(o){return o.status>=3}
 var WEEK='日一二三四五六';
 function renderHeader(){
   var d=new Date();
@@ -430,11 +442,12 @@ function renderHeader(){
     : '<div class="cutoff closed">'+ICON.clock+'<span>今天已截單</span><span class="sub">之後的訂單明天寄 · 今天還有 '+dueToday+' 筆沒寄</span></div>');
   var over=active.filter(function(o){return dueOf(o)==='over'}).length;
   var shippedToday=state.orders.filter(function(o){return o.status===3&&isToday(o.updatedAt)}).length;
+  var todoN=state.orders.filter(isTodo).length, packedN=state.orders.filter(isPacked).length;
   if(!$('stats').children.length){
-    $('stats').innerHTML=['待出貨','今天要寄','逾期','今天已寄'].map(function(l,i){return '<div class="stat'+(i===3?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
+    $('stats').innerHTML=['待包貨','已包好','逾期','今天已出貨'].map(function(l,i){return '<div class="stat'+(i===3?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
   }
-  var bs=$('stats').querySelectorAll('b'); [active.length,dueToday,over,shippedToday].forEach(function(v,i){tween(bs[i],v)});
-  var pool = state.view==='done' ? state.orders.filter(function(o){return o.status===3}) : active;
+  var bs=$('stats').querySelectorAll('b'); [todoN,packedN,over,shippedToday].forEach(function(v,i){tween(bs[i],v)});
+  var pool = state.orders.filter(state.view==='done'?isShipped:state.view==='packed'?isPacked:isTodo);
   var chips=[['all','全部']].concat(Object.keys(PLATFORMS).map(function(k){return [k,PLATFORMS[k].name]}));
   $('chips').innerHTML = chips.map(function(p){
     var n = pool.filter(function(o){return p[0]==='all'||o.platform===p[0]}).length;
@@ -447,11 +460,19 @@ function renderHeader(){
 /* ---------- tab bar ---------- */
 function renderTabs(){
   var pickN = pickRows().reduce(function(a,r){return a+r.qty},0);
-  var tabs=[['ship','出貨',ICON.box],['pick','揀貨',ICON.list],['done','已寄出',ICON.truck],['me','我的',ICON.me]];
-  $('tabbar').innerHTML=tabs.map(function(t){
-    return '<button class="tb'+(state.view===t[0]?' on':'')+'" data-view="'+t[0]+'">'+t[2]+
-      (t[0]==='pick'&&pickN&&state.loggedIn?'<span class="badge">'+pickN+'</span>':'')+t[1]+'</button>';
-  }).join('');
+  var packedN = state.orders.filter(isPacked).length;
+  var tabs=[['ship','包貨',ICON.box],['pick','揀貨',ICON.list],['packed','已包好',ICON.packed],['done','已出貨',ICON.truck],['me','我的',ICON.me]];
+  var tb=$('tabbar');
+  if(!tb.querySelector('.tb-pill')){
+    tb.innerHTML='<span class="tb-pill"></span>'+tabs.map(function(t){ return '<button class="tb" data-view="'+t[0]+'">'+t[2]+'<span class="badge" hidden></span>'+t[1]+'</button>'; }).join('');
+  }
+  var idx=0;
+  tabs.forEach(function(t,i){
+    var b=tb.querySelector('[data-view="'+t[0]+'"]'); var on=state.view===t[0]; if(on) idx=i; b.classList.toggle('on',on);
+    var n = t[0]==='pick'?pickN : t[0]==='packed'?packedN : 0; var bd=b.querySelector('.badge');
+    bd.hidden=!(n&&state.loggedIn); bd.textContent=n; bd.classList.toggle('dark',t[0]==='packed');
+  });
+  tb.querySelector('.tb-pill').style.transform='translateX('+(idx*100)+'%)';
 }
 
 /* ---------- main ---------- */
@@ -461,10 +482,9 @@ function render(){
   if(!state.loggedIn){ m.innerHTML='<div class="empty view"><div class="big">🍍</div><b>請先登入</b>用自己的名字和密碼登入</div>'; return; }
   if(!state.loaded){ m.innerHTML='<div class="list"><div class="sk"></div><div class="sk"></div></div>'; return; }
   if(state.view==='pick') return renderPick();
-  var done = state.view==='done';
+  var done = state.view==='done', packedV = state.view==='packed';
   var rows = state.orders.filter(function(o){
-    if(!done && o.status>=3) return false;
-    if(done && o.status<3) return false;
+    if(!(done?isShipped(o):packedV?isPacked(o):isTodo(o))) return false;
     return state.pf==='all' || o.platform===state.pf;
   });
   if(!done){
@@ -474,11 +494,14 @@ function render(){
     });
   } else rows.sort(function(a,b){return b.updatedAt-a.updatedAt});
   if(!rows.length){
-    m.innerHTML='<div class="empty view"><div class="big">'+(done?'📭':'🎉')+'</div><b>'+(done?'最近 7 天沒有寄出的訂單':'全部出貨完了')+'</b>'+(done?'':'官網、賣貨便的新訂單會自動出現在這裡')+'</div>';
+    m.innerHTML='<div class="empty view"><div class="big">'+(done?'📭':packedV?'📦':'🎉')+'</div><b>'+(done?'最近 7 天沒有出貨的訂單':packedV?'沒有等著寄的包裹':'今天的貨都包好了')+'</b>'+(done?'':packedV?'包好的訂單會排在這裡，拿去超商寄':'官網、賣貨便的新訂單會自動出現在這裡')+'</div>';
     return;
   }
   var i=0;
-  m.innerHTML='<div class="list view">'+rows.map(function(o){ var isNew=!state.seen[o.id]; state.seen[o.id]=1; return cardHTML(o,isNew?i++:-1); }).join('')+'</div>';
+  var bar='';
+  if(packedV){ bar='<div class="printbar">'+Object.keys(PLATFORMS).map(function(k){ var n=state.orders.filter(function(o){return isPacked(o)&&o.platform===k}).length;
+      return n?'<button data-printpf="'+k+'"><i style="background:'+PLATFORMS[k].color+'"></i>'+ICON.print+'印'+PLATFORMS[k].name+' '+n+' 張</button>':''; }).join('')+'</div>'; }
+  m.innerHTML=bar+'<div class="list view">'+rows.map(function(o){ var isNew=!state.seen[o.id]; state.seen[o.id]=1; return cardHTML(o,isNew?i++:-1); }).join('')+'</div>';
 }
 
 function dueTag(o){
@@ -495,25 +518,28 @@ function cardHTML(o,newIdx){
     '<div class="bar" style="background:'+p.bar+'"></div>'+
     '<div class="c-head"><span class="tag" style="background:'+p.color+';color:'+p.ink+'">'+p.name+'</span>'+
     (o.urgent&&o.status<3?'<span class="tag red">急單</span>':'')+dueTag(o)+
-    '<span class="age">'+(o.status>=3&&last?when(last.at)+' 寄出':ago(o.createdAt))+'</span></div>'+
+    '<span class="age">'+(o.status>=3&&last?when(last.at)+' 出貨':isPacked(o)&&last?when(last.at)+' 包好':ago(o.createdAt))+'</span></div>'+
     '<div class="ono-row"><span class="ono">'+esc(o.orderNo||'（未填編號）')+'</span>'+(o.orderNo?'<button class="icon-btn" data-act="copy" aria-label="複製編號">'+ICON.copy+'</button>':'')+'</div>'+
     (items.length?'<div class="items">'+items.map(function(it){var l=locOf(it.name);return '<div class="item">'+thumb(it.name)+'<div class="itx"><div class="iname">'+esc(it.name)+'</div><div class="imeta">'+(l?'<span class="loc">'+esc(l)+'</span>':'')+'<span class="iq">× '+it.qty+'</span></div></div></div>'}).join('')+'</div>':'')+
     (o.note?'<div class="note"><b>備註 </b>'+esc(o.note)+'</div>':'')+
     '<div class="prog-l"><span>'+(last?esc(last.s)+' · '+esc(last.by)+' '+when(last.at):'')+'</span>'+
     ((o.photos||[]).length?'<span></span>':'')+'</div>';
-  if(o.status<3){
-    h += '<button class="go" data-act="ship">'+ICON.check+'已包好</button>';
+  if(isTodo(o)){
+    h += '<button class="go" data-act="ship">'+ICON.check+'已包好</button>'+
+      '<div class="sub"><button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button><button data-act="edit">詳細</button></div>';
+  } else if(isPacked(o)){
+    h += '<button class="go light" data-act="print">'+ICON.print+'列印標籤</button>'+
+      '<div class="sub"><button data-act="unpack">改回待包貨</button><button data-act="shipped">已出貨</button><button data-act="edit">詳細</button></div>';
+  } else {
+    h += '<div class="sub"><button data-act="unship">改回已包好</button><button data-act="edit">詳細</button></div>';
   }
-  h += '<div class="sub">'+
-    (o.status<3?'<button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button>':'<button data-act="unship">改回未出貨</button>')+
-    '<button data-act="edit">詳細</button></div>';
   return h+'</div>';
 }
 
 /* ---------- pick list ---------- */
 function pickOrders(){
   return state.orders.filter(function(o){
-    if(o.status>=3) return false;
+    if(!isTodo(o)) return false;
     if(state.pf!=='all' && o.platform!==state.pf) return false;
     return true;
   });
@@ -536,9 +562,9 @@ function renderPick(){
   var total=rows.reduce(function(a,r){return a+r.qty},0);
   var html='<div class="view">';
   if(!rows.length){
-    $('main').innerHTML=html+'<div class="empty"><div class="big">🧺</div><b>沒有要揀的貨</b>還沒出貨的訂單會自動合併在這裡</div></div>'; return;
+    $('main').innerHTML=html+'<div class="empty"><div class="big">🧺</div><b>沒有要揀的貨</b>還沒包的訂單會自動合併在這裡</div></div>'; return;
   }
-  html+='<div class="pick-sum"><b>'+total+' 件</b><span>今天要出的貨 · 來自 '+os.length+' 筆訂單</span></div><div class="list" id="plist">'+
+  html+='<div class="pick-sum"><b>'+total+' 件</b><span>今天要包的貨 · 來自 '+os.length+' 筆訂單</span></div><div class="list" id="plist">'+
     rows.map(function(r,i){var d=lsGet(pickKey(r.name))==='1';
       return '<div class="prow card new'+(d?' done':'')+'" style="--i:'+i+'" data-pick="'+esc(r.name)+'"><span class="ck">'+ICON.check+'</span>'+
         thumb(r.name,'sm')+'<div class="pmain"><div class="pn">'+(r.loc?'<span class="loc">'+esc(r.loc)+'</span> ':'')+esc(r.name)+'</div><div class="pref">'+esc(r.refs.join('、'))+'</div></div>'+
@@ -560,8 +586,8 @@ function labelHTML(o){
 function openPrint(list){
   if(!list.length){toast('沒有可以印的訂單');return}
   $('printArea').innerHTML=list.map(labelHTML).join('');
-  openSheet('<h2>包裹標籤</h2><div class="hint">10 × 15 公分，每張一筆訂單。包好後貼在袋子上，就不用手寫編號。</div>'+
-    '<div class="row2"><button class="btn-ghost" data-close>取消</button><button class="btn-main" id="doPrint">'+'列印 '+list.length+' 張</button></div>'+
+  openSheet('<h2>列印標籤</h2><div class="hint">10 × 15 公分，每張一筆訂單。目前先印出貨標籤（編號＋商品＋門市），之後接上平台會直接印超商寄件單。</div>'+
+    '<div class="row2"><button class="btn-ghost" data-close>稍後再印</button><button class="btn-main" id="doPrint">'+'列印 '+list.length+' 張</button></div>'+
     '<div class="pv-wrap">'+list.map(labelHTML).join('')+'</div>');
   $('doPrint').onclick=function(){ window.print(); };
 }
@@ -574,9 +600,11 @@ function apply(data){
   if(data.settings) state.settings=data.settings;
   if(data.shelves) state.shelves=data.shelves;
   if(data.catalogVer) setTimeout(function(){syncCatalog(data.catalogVer)},0);
+  var sig=JSON.stringify([data.orders,data.settings,data.shelves,state.me&&state.me.name]);
+  var same=state.loaded&&state.loggedIn&&sig===state._sig; state._sig=sig;
   state.loggedIn=true; state.loaded=true;
   $('sync').textContent='最後同步 '+hm(Date.now());
-  render();
+  if(same) renderHeader(); else render();
 }
 function load(){
   if(!state.token) return Promise.resolve();
@@ -834,17 +862,17 @@ $('cam').addEventListener('change',function(){
     if(job.ship){ shipOut(job.id); } else { toast('照片已存好'); if(job.reopen){ var o=findOrder(job.id); if(o) orderForm(o); } }
   }).catch(function(e){ toast(e.message||'照片上傳失敗'); });
 });
-function setLocal(id,status){ var o=findOrder(id); if(!o) return null; var prev=o.status; o.status=status; o.updatedAt=Date.now(); o.history=(o.history||[]).concat([{s:status>=3?'已寄出':'改回未出貨',by:state.me?state.me.name:'',at:Date.now()}]); return prev; }
+function setLocal(id,status){ var o=findOrder(id); if(!o) return null; var prev=o.status; o.status=status; o.updatedAt=Date.now(); o.history=(o.history||[]).concat([{s:status>=3?'已寄出':status>=1?'已包好':'改回待包貨',by:state.me?state.me.name:'',at:Date.now()}]); return prev; }
 function quick(id,status,msg,undoable){
   var prev=setLocal(id,status); render(); state.syncing=(state.syncing||0)+1;
   call('apiSetStatus',id,status).then(function(d){ state.syncing--; if(!state.syncing) apply(d); })
     .catch(function(e){ state.syncing--; setLocal(id,prev); render(); toast('沒有成功，請再按一次'); });
-  toast(msg, undoable?function(){ quick(id,prev,'已改回未出貨',false); }:null);
+  toast(msg, undoable?function(){ quick(id,prev,'已復原',false); }:null);
 }
 function shipOut(id){
   var el=document.querySelector('.card[data-id="'+id+'"]');
   if(el) el.classList.add('leaving');
-  setTimeout(function(){ quick(id,3,'已包好 ✓',true); },400);
+  setTimeout(function(){ quick(id,1,'已包好 ✓',true); var o=findOrder(id); if(o) setTimeout(function(){ openPrint([o]); },350); },400);
 }
 function askPhoto(o){
   openSheet('<h2>拍封箱照</h2><div class="hint">對著封好的包裹拍一張（看得到寄件單），客人說少件時可以拿出來證明。</div>'+
@@ -867,6 +895,7 @@ document.addEventListener('click',function(e){ var im=e.target.closest('img.pimg
 $('main').addEventListener('click',function(e){
   var sg=e.target.closest('[data-scope]'); if(sg){ state.pickScope=sg.dataset.scope; render(); return; }
   if(e.target.closest('#printBtn')){ openPrint(pickOrders()); return; }
+  var pp=e.target.closest('[data-printpf]'); if(pp){ openPrint(state.orders.filter(function(o){return isPacked(o)&&o.platform===pp.dataset.printpf})); return; }
   var pr=e.target.closest('[data-pick]');
   if(pr){ var k=pickKey(pr.dataset.pick), d=lsGet(k)==='1'; if(d) lsDel(k); else lsSet(k,'1'); pr.classList.toggle('done',!d);
     if(!d && navigator.vibrate) navigator.vibrate(10); return; }
@@ -876,7 +905,10 @@ $('main').addEventListener('click',function(e){
   if(a==='copy'){ copyText(o.orderNo).then(function(){toast('已複製 '+o.orderNo)}); }
   else if(a==='backend'){ copyText(o.orderNo); window.open(PLATFORMS[o.platform].link(o.orderNo),'_blank'); toast('編號已複製，到後台貼上搜尋'); }
   else if(a==='ship'){ if(navigator.vibrate) navigator.vibrate(12); shipOut(id); }
-  else if(a==='unship'){ quick(id,0,'已改回未出貨',false); }
+  else if(a==='unship'){ quick(id,1,'已改回已包好',false); }
+  else if(a==='unpack'){ quick(id,0,'已改回待包貨',false); }
+  else if(a==='shipped'){ quick(id,3,'已出貨 ✓',true); }
+  else if(a==='print'){ openPrint([o]); }
   else if(a==='urgent'){ o.urgent=!o.urgent; render(); act('apiUpdate',id,{urgent:o.urgent}); }
   else if(a==='edit'){ orderForm(o); }
 });
@@ -886,19 +918,21 @@ window.addEventListener('scroll',function(){ $('top').classList.toggle('shadow',
 
 /* ---------- pull to refresh ---------- */
 (function(){
-  var y0=null, d=0, off=0, ptr=$('ptr'), spin=ptr.firstChild, app=$('app'), busy=false, HOLD=64, TRIG=72;
-  function rubber(x){ return 150*(1-Math.exp(-x/260)); }
-  function setOff(v){ app.style.transform=v?'translateY('+v+'px)':''; }
-  window.addEventListener('touchstart',function(e){ if(busy||window.scrollY>0||$('mask').classList.contains('show')){y0=null;return} y0=e.touches[0].clientY; d=0; off=0; ptr.classList.remove('anim'); app.classList.remove('anim'); },{passive:true});
-  window.addEventListener('touchmove',function(e){ if(y0===null) return; if(window.scrollY>0){ y0=e.touches[0].clientY; return; } d=Math.max(0,e.touches[0].clientY-y0); off=rubber(d);
-    setOff(off); ptr.style.opacity=Math.min(1,Math.max(0,(off-14)/40)); spin.style.transform='rotate('+(off*4)+'deg)'; },{passive:true});
-  window.addEventListener('touchend',function(){ if(y0===null) return; y0=null; ptr.classList.add('anim'); app.classList.add('anim');
-    if(off>=TRIG && state.loggedIn){ busy=true; ptr.classList.add('loading'); setOff(HOLD); ptr.style.opacity=1; spin.style.transform='';
+  // iPhone 原生回彈：整頁跟著手指往下，往上滑就直接捲動
+  var ptr=$('ptr'), spin=ptr.firstChild, space=$('ptrSpace'), busy=false, TRIG=70, raf=0;
+  function paint(){ raf=0; var y=-window.scrollY; if(busy) return;
+    if(y>0){ ptr.style.opacity=Math.min(1,Math.max(0,(y-10)/45)); spin.style.transform='rotate('+(y*4)+'deg)'; }
+    else if(ptr.style.opacity!=='0'){ ptr.style.opacity=0; } }
+  window.addEventListener('scroll',function(){ if(!raf) raf=requestAnimationFrame(paint); },{passive:true});
+  window.addEventListener('touchend',function(){
+    if(busy || !state.loggedIn || $('mask').classList.contains('show')) return;
+    if(-window.scrollY>=TRIG){ busy=true; ptr.classList.add('loading'); ptr.style.opacity=1; spin.style.transform=''; space.classList.add('on');
       if(navigator.vibrate) navigator.vibrate(8);
-      var t0=Date.now(); var done=function(){ setTimeout(function(){ setOff(0); ptr.style.opacity=0; setTimeout(function(){ ptr.classList.remove('loading'); app.classList.remove('anim'); busy=false; },450); }, Math.max(0,700-(Date.now()-t0))); };
+      var t0=Date.now(); var done=function(){ setTimeout(function(){ space.classList.remove('on'); ptr.classList.add('anim'); ptr.style.opacity=0;
+        setTimeout(function(){ ptr.classList.remove('loading','anim'); busy=false; },450); }, Math.max(0,700-(Date.now()-t0))); };
       load().then(done,done);
-    } else { setOff(0); ptr.style.opacity=0; setTimeout(function(){ app.classList.remove('anim'); },450); }
-  });
+    }
+  },{passive:true});
 })();
 
 /* ---------- start ---------- */
