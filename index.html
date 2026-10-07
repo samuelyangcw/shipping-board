@@ -21,7 +21,7 @@
   --green:#05A357; --green-bg:#E6F6EE; --red:#E11900; --red-bg:#FFEFED; --orange:#FF6B00; --orange-bg:#FFF1E5;
   --yellow-bg:#FFF6D9; --yellow-ink:#7A5A00; --blue:#276EF1;
   --p-web:#F5B400; --p-shopee:#EE4D2D; --p-myship:#00843D; --p-711-o:#F48120; --p-711-r:#E3001B;
-  --ease:cubic-bezier(.25,.1,.25,1); --spring:cubic-bezier(.25,.1,.25,1);
+  --ease:cubic-bezier(.3,.2,.3,1); --spring:cubic-bezier(.3,.2,.3,1);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Helvetica Neue","Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -162,7 +162,7 @@ svg{display:block}
 /* ---------- bottom bar ---------- */
 .tabbar{position:fixed;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom));z-index:8;padding:0 14px;pointer-events:none}
 .tabbar-in{pointer-events:auto;position:relative;max-width:520px;margin:0 auto;display:flex;padding:5px;border-radius:999px;background:rgba(250,250,250,.72);-webkit-backdrop-filter:saturate(190%) blur(26px);backdrop-filter:saturate(190%) blur(26px);border:.5px solid rgba(0,0,0,.08);box-shadow:0 10px 34px rgba(0,0,0,.13),0 1px 3px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9)}
-.tb-pill{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px) / 5);border-radius:999px;background:rgba(0,0,0,.075);box-shadow:inset 0 .5px 0 rgba(255,255,255,.7);transition:transform .45s cubic-bezier(.25,.1,.25,1)}
+.tb-pill{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px) / 5);border-radius:999px;background:rgba(0,0,0,.075);box-shadow:inset 0 .5px 0 rgba(255,255,255,.7);transition:transform .45s cubic-bezier(.3,.2,.3,1)}
 .tb{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0 6px;border-radius:999px;font-size:10.5px;font-weight:700;color:#48484A;transition:color .3s ease}
 .tb svg{width:23px;height:23px}
 .tb.on{color:var(--ink)}
@@ -179,7 +179,7 @@ svg{display:block}
 /* ---------- sheet ---------- */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:20;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;transition:background .4s ease}
 .mask.show{background:rgba(0,0,0,.35);pointer-events:auto}
-.sheet{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .5s cubic-bezier(.32,.72,0,1)}
+.sheet{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .5s cubic-bezier(.3,.2,.3,1)}
 .mask.show .sheet{transform:none}
 .sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--surface2);margin:0 auto 16px}
 .sheet h2{margin:0 0 4px;font-size:26px;font-weight:800;letter-spacing:-.6px}
@@ -241,7 +241,7 @@ textarea.inp{min-height:88px;resize:vertical}
 /* ---------- pull to refresh ---------- */
 .ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 18px);z-index:0;width:28px;height:28px;margin-left:-14px;display:grid;place-items:center;opacity:0;pointer-events:none}
 .ptr.anim{transition:opacity .35s ease}
-#ptrSpace{height:0;transition:height .45s cubic-bezier(.25,.1,.25,1)}
+#ptrSpace{height:0;transition:height .45s cubic-bezier(.3,.2,.3,1)}
 #ptrSpace.on{height:58px}
 .ptr-spin{width:22px;height:22px;border-radius:50%;border:2.5px solid #E2E2E2;border-top-color:#8E8E93}
 #app{position:relative;z-index:1;background:var(--bg)}
@@ -275,6 +275,18 @@ textarea.inp{min-height:88px;resize:vertical}
   #printArea{display:block !important}
   #printArea .label{border:0;page-break-after:always;break-after:page}
 }
+
+/* ---------- liquid glass（只用在固定的幾個元件，保持順暢） ---------- */
+.top{background:rgba(255,255,255,.66);-webkit-backdrop-filter:saturate(200%) blur(22px);backdrop-filter:saturate(200%) blur(22px)}
+.tabbar-in{background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.48));border:1px solid rgba(255,255,255,.75);box-shadow:0 12px 36px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.05),inset 0 1px 1px rgba(255,255,255,.95),inset 0 -1px 1px rgba(0,0,0,.04)}
+.tb-pill{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,255,255,.7));box-shadow:0 2px 10px rgba(0,0,0,.10),inset 0 1px 0 #fff,inset 0 -.5px 0 rgba(0,0,0,.06)}
+.toast{background:rgba(28,28,30,.74);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border:1px solid rgba(255,255,255,.14);border-radius:18px}
+.mask.show{background:rgba(0,0,0,.22)}
+.sheet{background:rgba(255,255,255,.88);-webkit-backdrop-filter:saturate(180%) blur(28px);backdrop-filter:saturate(180%) blur(28px);border-top:1px solid rgba(255,255,255,.8);box-shadow:0 -8px 30px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.9)}
+.chip{background:rgba(0,0,0,.045);box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+.go{box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 4px 14px rgba(0,0,0,.14)}
+.go.light{box-shadow:inset 0 1px 0 #fff}
+.printbar button{box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 4px 14px rgba(0,0,0,.14)}
 </style>
 </head>
 <body>
