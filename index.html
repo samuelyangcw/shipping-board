@@ -500,7 +500,7 @@ function cardHTML(o,newIdx){
     '<div class="prog-l"><span>'+(last?esc(last.s)+' · '+esc(last.by)+' '+when(last.at):'')+'</span>'+
     ((o.photos||[]).length?'<span></span>':'')+'</div>';
   if(o.status<3){
-    h += '<button class="go" data-act="ship">'+ICON.check+'出貨完成</button>';
+    h += '<button class="go" data-act="ship">'+ICON.check+'已包好</button>';
   }
   h += '<div class="sub">'+
     (o.status<3?'<button data-act="urgent" class="'+(o.urgent?'u-on':'')+'">'+(o.urgent?'取消急單':'急單')+'</button>':'<button data-act="unship">改回未出貨</button>')+
@@ -635,7 +635,7 @@ function askPin(name){
   setTimeout(function(){$('pin').focus()},350);
 }
 function showBootstrap(){
-  openSheet('<h2>建立總控制人</h2><div class="hint">第一次使用：先建立總控制人帳號。總控制人可以新增人員、設定截單時間和貨架位置、刪除訂單。</div>'+
+  openSheet('<h2>建立總控制人</h2><div class="hint">第一次使用：先建立總控制人帳號。總控制人可以新增人員、設定截單時間和貨架位置。</div>'+
     '<div class="lbl">名字</div><input class="inp" id="bName" maxlength="12" placeholder="例如：老闆">'+
     '<div class="lbl">4 位數密碼</div><input class="inp pin" id="bPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••">'+
     '<div class="lbl">再輸入一次</div><input class="inp pin" id="bPin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••">'+
@@ -761,8 +761,7 @@ function orderForm(o){
     '<div class="lbl">客人備註 / 特別交代</div><textarea class="inp" id="fNote" placeholder="例如：下週一要出國，請這兩天寄出">'+esc(o.note)+'</textarea>'+
     '<div class="lbl">急單</div><button class="toggle'+(urgent?' on':'')+'" id="fUrg"><span>急單（排到最上面、變紅色）</span><span class="sw"></span></button>'+
     '<div class="row2"><button class="btn-ghost" data-close>取消</button><button class="btn-main" id="fSave">'+(editing?'儲存':'新增')+'</button></div>'+
-    photoHtml+logHtml+
-    (editing&&isAdmin()?'<div class="row2"><button class="btn-ghost" id="fDel" style="color:var(--red)">刪除這筆訂單</button></div>':''));
+    photoHtml+logHtml);
   var irows=parseItems(o.items); if(!irows.length) irows=[{name:'',qty:1}];
   function drawItems(){
     $('itemRows').innerHTML=irows.map(function(r,i){
@@ -801,7 +800,6 @@ function orderForm(o){
     closeSheet();
     if(editing) act('apiUpdate',o.id,data).then(function(){toast('已儲存')}); else act('apiAdd',data).then(function(){toast('已新增')});
   };
-  if(editing&&isAdmin()) $('fDel').onclick=function(){confirmDelete(o)};
 }
 function openPhoto(u,title){
   openSheet('<h2>'+esc(title||'封箱照片')+'</h2><img src="'+u+'" style="width:100%;border-radius:14px;margin-top:10px"><div class="row2"><button class="btn-ghost" data-close>關閉</button></div>');
@@ -844,7 +842,7 @@ function quick(id,status,msg,undoable){
 function shipOut(id){
   var el=document.querySelector('.card[data-id="'+id+'"]');
   if(el) el.classList.add('leaving');
-  setTimeout(function(){ quick(id,3,'已出貨 ✓',true); },220);
+  setTimeout(function(){ quick(id,3,'已包好 ✓',true); },220);
 }
 function askPhoto(o){
   openSheet('<h2>拍封箱照</h2><div class="hint">對著封好的包裹拍一張（看得到寄件單），客人說少件時可以拿出來證明。</div>'+
