@@ -50,7 +50,7 @@ svg{display:block}
 .cutoff .sub{color:var(--ink2);font-weight:500}
 .cutoff.closed{background:var(--orange-bg);color:#8A3A00}
 
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
 .stat{background:var(--surface);border-radius:14px;padding:10px 6px 8px;text-align:center}
 .stat b{display:block;font-size:26px;font-weight:800;line-height:1.05;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--ink2);font-weight:600}
@@ -424,7 +424,7 @@ function fallbackCopy(t){var a=document.createElement('textarea');a.value=t;a.st
 function cutoffMin(){var p=(state.settings.cutoff||'14:00').split(':');return (+p[0])*60+(+p[1])}
 function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()}
 function defaultShipBy(){return nowMin()<cutoffMin()?ymd():addDays(1)}
-function dueOf(o){ if(!o.shipBy||!/^\d{4}-\d\d-\d\d$/.test(o.shipBy)) return null; var t=ymd(); return o.shipBy<t?'over':(o.shipBy===t?'today':'later'); }
+function dueOf(o){ return null; if(!o.shipBy||!/^\d{4}-\d\d-\d\d$/.test(o.shipBy)) return null; var t=ymd(); return o.shipBy<t?'over':(o.shipBy===t?'today':'later'); }
 function parseItems(text){
   return String(text||'').split(/\n+/).map(function(l){return l.trim()}).filter(Boolean).map(function(l){
     var m=/^(.*?)[\s　]*[xX×*＊][\s　]*(\d+)\s*$/.exec(l);
@@ -482,18 +482,18 @@ function renderHeader(){
   var dueToday=active.filter(function(o){var u=dueOf(o);return u==='today'||u==='over'}).length;
   var left=cutoffMin()-nowMin();
   var cut=state.settings.cutoff||'14:00';
-  $('cutoff').innerHTML = !state.loggedIn ? '' : (left>0
+  $('cutoff').innerHTML = true ? '' : (left>0
     ? '<div class="cutoff">'+ICON.clock+'<span>'+cut+' 截單</span><span class="sub">還有 '+(left>=60?Math.floor(left/60)+' 小時 ':'')+(left%60)+' 分 · 今天要寄 '+dueToday+' 筆</span></div>'
     : '<div class="cutoff closed">'+ICON.clock+'<span>今天已截單</span><span class="sub">之後的訂單明天寄 · 今天還有 '+dueToday+' 筆沒寄</span></div>');
   var over=active.filter(function(o){return dueOf(o)==='over'}).length;
   var shippedToday=state.orders.filter(function(o){return o.status===3&&isToday(o.updatedAt)}).length;
   var todoN=state.orders.filter(isTodo).length, packedN=state.orders.filter(isPacked).length;
   if(!$('stats').children.length){
-    $('stats').innerHTML=['待包貨','已包好','逾期','今天已出貨'].map(function(l,i){return '<div class="stat'+(i===3?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
+    $('stats').innerHTML=['待包貨','已包好','今天已出貨'].map(function(l,i){return '<div class="stat'+(i===2?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
   }
-  var on = state.sf==='over'?2 : state.sf==='shipToday'?3 : state.view==='packed'?1 : state.view==='ship'?0 : -1;
+  var on = state.sf==='shipToday'?2 : state.view==='packed'?1 : state.view==='ship'?0 : -1;
   [].forEach.call($('stats').children,function(el,i){ el.dataset.stat=i; el.classList.toggle('on',i===on); });
-  var bs=$('stats').querySelectorAll('b'); [todoN,packedN,over,shippedToday].forEach(function(v,i){tween(bs[i],v)});
+  var bs=$('stats').querySelectorAll('b'); [todoN,packedN,shippedToday].forEach(function(v,i){tween(bs[i],v)});
   var pool = state.orders.filter(state.view==='done'?isShipped:state.view==='packed'?isPacked:isTodo);
   var chips=[['all','全部']].concat(Object.keys(PLATFORMS).map(function(k){return [k,PLATFORMS[k].name]}));
   $('chips').innerHTML = chips.map(function(p){
@@ -742,10 +742,10 @@ function menu(){
   if(!state.loggedIn){ showLogin(); return; }
   var a=isAdmin();
   openSheet('<h2>'+esc(state.me.name)+(a?'<span class="kbadge">總控</span>':'')+'</h2><div class="hint">'+(a?'總控制人':'出貨小幫手')+' · 這支手機會記住你的登入</div>'+
-    (a?'<div class="lbl">管理</div><div class="list-box"><button id="mPeople">人員管理<span class="chev">›</span></button><button id="mCut">截單時間<span class="chev">'+esc(state.settings.cutoff)+' ›</span></button><button id="mShelf">貨架位置<span class="chev">'+state.shelves.length+' 筆 ›</span></button><button id="mCat">商品同步<span class="chev">'+state.catalog.items.length+' 項 ›</span></button></div>':'')+
+    (a?'<div class="lbl">管理</div><div class="list-box"><button id="mPeople">人員管理<span class="chev">›</span></button><button id="mShelf">貨架位置<span class="chev">'+state.shelves.length+' 筆 ›</span></button><button id="mCat">商品同步<span class="chev">'+state.catalog.items.length+' 項 ›</span></button></div>':'')+
     '<div class="lbl">後台捷徑</div><div class="list-box">'+LINKS.map(function(l){return '<a href="'+l[1]+'" target="_blank" rel="noopener">'+l[0]+'<span class="chev">'+ICON.ext+'</span></a>'}).join('')+'</div>'+
     '<div class="row2"><button class="btn-ghost" id="mSync">重新整理</button><button class="btn-ghost" id="mOut" style="color:var(--red)">登出 / 換人</button></div>');
-  if(a){ $('mPeople').onclick=openPeople; $('mCut').onclick=cutoffSheet; $('mShelf').onclick=shelfSheet; $('mCat').onclick=catalogSheet; }
+  if(a){ $('mPeople').onclick=openPeople; $('mShelf').onclick=shelfSheet; $('mCat').onclick=catalogSheet; }
   $('mSync').onclick=function(){closeSheet();load().then(function(){toast('已更新')})};
   $('mOut').onclick=function(){ call('apiLogout').catch(function(){}).then(signedOut); };
 }
@@ -970,7 +970,7 @@ $('tabbar').addEventListener('click',function(e){
 });
 $('stats').addEventListener('click',function(e){
   var t=e.target.closest('[data-stat]'); if(!t||!state.loggedIn) return; var i=+t.dataset.stat;
-  var nv=['ship','packed','ship','done'][i], nf=[null,null,'over','shipToday'][i];
+  var nv=['ship','packed','done'][i], nf=[null,null,'shipToday'][i];
   if(state.view===nv && state.sf===nf && nf){ nf=null; }
   state.view=nv; state.sf=nf; state.seen={}; render(); window.scrollTo({top:0,behavior:'smooth'});
 });
