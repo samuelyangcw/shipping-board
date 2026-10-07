@@ -21,11 +21,11 @@
   --green:#05A357; --green-bg:#E6F6EE; --red:#E11900; --red-bg:#FFEFED; --orange:#FF6B00; --orange-bg:#FFF1E5;
   --yellow-bg:#FFF6D9; --yellow-ink:#7A5A00; --blue:#276EF1;
   --p-web:#F5B400; --p-shopee:#EE4D2D; --p-myship:#00843D; --p-711-o:#F48120; --p-711-r:#E3001B;
-  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.22,1.2,.36,1);
+  --ease:cubic-bezier(.25,.1,.25,1); --spring:cubic-bezier(.25,.1,.25,1);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Helvetica Neue","Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
-button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0;transition:filter .12s,transform .12s,background .2s,opacity .2s}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0;transition:filter .18s ease,transform .18s ease,background .25s ease,opacity .25s ease}
 button:active,button.tap,.prow.tap,a.tap{filter:brightness(.82);transform:scale(.97)}
 .go:active,.go.tap,.btn-main:active,.btn-main.tap{filter:brightness(1.6) contrast(.85)}
 input,textarea{font:inherit;color:inherit;-webkit-user-select:text;user-select:text}
@@ -64,16 +64,16 @@ svg{display:block}
 .chip.on{background:var(--ink);color:#fff}
 
 /* ---------- views ---------- */
-.view{animation:viewIn .35s var(--ease)}
+.view{animation:viewIn .45s var(--ease)}
 @keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .list{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .sec{font-size:13px;font-weight:700;color:var(--ink2);margin:18px 2px 0;letter-spacing:.3px}
 
 /* ---------- card ---------- */
-.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 16px 14px 20px;position:relative;overflow:hidden;transition:transform .3s var(--ease),opacity .3s var(--ease),box-shadow .2s}
-.card.new{animation:rise .5s var(--ease) both;animation-delay:calc(var(--i,0)*40ms)}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 16px 14px 20px;position:relative;overflow:hidden;transition:transform .42s var(--ease),opacity .42s var(--ease),box-shadow .25s}
+.card.new{animation:rise .55s var(--ease) both;animation-delay:calc(var(--i,0)*55ms)}
 @keyframes rise{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
-.card.leaving{transform:translateX(60px);opacity:0}
+.card.leaving{transform:translateX(40px);opacity:0}
 .card.urgent{border:2px solid var(--red);padding:15px 15px 13px 19px}
 .card .bar{position:absolute;left:0;top:0;bottom:0;width:6px}
 .c-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -90,7 +90,7 @@ svg{display:block}
 .items{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .item{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}
 .item{align-items:center;gap:12px}
-.pimg{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--surface);flex:none;display:block;cursor:zoom-in;animation:imgIn .4s var(--ease)}
+.pimg{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--surface);flex:none;display:block;cursor:zoom-in;animation:imgIn .5s var(--ease)}
 @keyframes imgIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
 .pimg.sm{width:46px;height:46px;border-radius:10px}
 .pimg.ph{display:grid;place-items:center;color:var(--ink3);cursor:default;animation:none}
@@ -171,9 +171,9 @@ svg{display:block}
 .fab:active{transform:scale(.9) rotate(90deg)}
 
 /* ---------- sheet ---------- */
-.mask{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:20;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;transition:background .3s}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:20;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;transition:background .4s ease}
 .mask.show{background:rgba(0,0,0,.35);pointer-events:auto}
-.sheet{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .42s var(--ease)}
+.sheet{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .5s cubic-bezier(.32,.72,0,1)}
 .mask.show .sheet{transform:none}
 .sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--surface2);margin:0 auto 16px}
 .sheet h2{margin:0 0 4px;font-size:26px;font-weight:800;letter-spacing:-.6px}
@@ -233,15 +233,17 @@ textarea.inp{min-height:88px;resize:vertical}
 .photos .ph.loaded{animation:none;background-size:cover}
 
 /* ---------- pull to refresh ---------- */
-.ptr{position:fixed;left:50%;top:max(10px,env(safe-area-inset-top));z-index:30;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);display:grid;place-items:center;transform:translateY(-80px);opacity:0;pointer-events:none}
-.ptr.anim{transition:transform .3s var(--ease),opacity .3s}
-.ptr-spin{width:20px;height:20px;border-radius:50%;border:2.5px solid var(--surface2);border-top-color:var(--ink)}
+.ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 18px);z-index:0;width:28px;height:28px;margin-left:-14px;display:grid;place-items:center;opacity:0;pointer-events:none}
+.ptr.anim{transition:opacity .35s ease}
+.ptr-spin{width:22px;height:22px;border-radius:50%;border:2.5px solid #E2E2E2;border-top-color:#8E8E93}
+#app{position:relative;z-index:1;background:var(--bg);will-change:transform}
+#app.anim{transition:transform .45s cubic-bezier(.25,.1,.25,1)}
 .ptr.loading .ptr-spin{animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- toast ---------- */
-.toast{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:40;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;font-weight:600;max-width:90%;box-shadow:0 10px 30px rgba(0,0,0,.2);transform:translate(-50%,-160%);opacity:0;visibility:hidden;transition:transform .45s var(--spring),opacity .25s,visibility 0s .45s;pointer-events:none}
-.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .45s var(--spring),opacity .2s}
+.toast{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:40;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;font-weight:600;max-width:90%;box-shadow:0 10px 30px rgba(0,0,0,.2);transform:translate(-50%,-160%);opacity:0;visibility:hidden;transition:transform .5s var(--ease),opacity .3s,visibility 0s .5s;pointer-events:none}
+.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .5s var(--ease),opacity .3s}
 .toast.has-undo{pointer-events:auto;display:flex;align-items:center;gap:14px}
 .toast .undo{color:#FFD60A;font-weight:800;font-size:15px}
 .sync{font-size:12px;color:var(--ink3);text-align:center;margin-top:16px}
@@ -842,7 +844,7 @@ function quick(id,status,msg,undoable){
 function shipOut(id){
   var el=document.querySelector('.card[data-id="'+id+'"]');
   if(el) el.classList.add('leaving');
-  setTimeout(function(){ quick(id,3,'已包好 ✓',true); },220);
+  setTimeout(function(){ quick(id,3,'已包好 ✓',true); },400);
 }
 function askPhoto(o){
   openSheet('<h2>拍封箱照</h2><div class="hint">對著封好的包裹拍一張（看得到寄件單），客人說少件時可以拿出來證明。</div>'+
@@ -884,15 +886,18 @@ window.addEventListener('scroll',function(){ $('top').classList.toggle('shadow',
 
 /* ---------- pull to refresh ---------- */
 (function(){
-  var y0=null, d=0, ptr=$('ptr'), spin=ptr.firstChild, busy=false;
-  window.addEventListener('touchstart',function(e){ if(busy||window.scrollY>0||$('mask').classList.contains('show')){y0=null;return} y0=e.touches[0].clientY; d=0; ptr.classList.remove('anim'); },{passive:true});
-  window.addEventListener('touchmove',function(e){ if(y0===null) return; d=Math.max(0,e.touches[0].clientY-y0); if(!d) return; var p=Math.min(d,120);
-    ptr.style.transform='translateY('+(p*0.8-60)+'px)'; ptr.style.opacity=Math.min(1,p/60); spin.style.transform='rotate('+(p*3)+'deg)'; },{passive:true});
-  window.addEventListener('touchend',function(){ if(y0===null) return; y0=null; ptr.classList.add('anim');
-    if(d>70 && state.loggedIn){ busy=true; ptr.classList.add('loading'); ptr.style.transform='translateY(20px)'; ptr.style.opacity=1; spin.style.transform='';
+  var y0=null, d=0, off=0, ptr=$('ptr'), spin=ptr.firstChild, app=$('app'), busy=false, HOLD=64, TRIG=72;
+  function rubber(x){ return 150*(1-Math.exp(-x/260)); }
+  function setOff(v){ app.style.transform=v?'translateY('+v+'px)':''; }
+  window.addEventListener('touchstart',function(e){ if(busy||window.scrollY>0||$('mask').classList.contains('show')){y0=null;return} y0=e.touches[0].clientY; d=0; off=0; ptr.classList.remove('anim'); app.classList.remove('anim'); },{passive:true});
+  window.addEventListener('touchmove',function(e){ if(y0===null) return; if(window.scrollY>0){ y0=e.touches[0].clientY; return; } d=Math.max(0,e.touches[0].clientY-y0); off=rubber(d);
+    setOff(off); ptr.style.opacity=Math.min(1,Math.max(0,(off-14)/40)); spin.style.transform='rotate('+(off*4)+'deg)'; },{passive:true});
+  window.addEventListener('touchend',function(){ if(y0===null) return; y0=null; ptr.classList.add('anim'); app.classList.add('anim');
+    if(off>=TRIG && state.loggedIn){ busy=true; ptr.classList.add('loading'); setOff(HOLD); ptr.style.opacity=1; spin.style.transform='';
       if(navigator.vibrate) navigator.vibrate(8);
-      var t0=Date.now(); load().then(function(){ setTimeout(function(){ ptr.classList.remove('loading'); ptr.style.transform=''; ptr.style.opacity=0; busy=false; toast('已更新'); }, Math.max(0,500-(Date.now()-t0))); });
-    } else { ptr.style.transform=''; ptr.style.opacity=0; }
+      var t0=Date.now(); var done=function(){ setTimeout(function(){ setOff(0); ptr.style.opacity=0; setTimeout(function(){ ptr.classList.remove('loading'); app.classList.remove('anim'); busy=false; },450); }, Math.max(0,700-(Date.now()-t0))); };
+      load().then(done,done);
+    } else { setOff(0); ptr.style.opacity=0; setTimeout(function(){ app.classList.remove('anim'); },450); }
   });
 })();
 
