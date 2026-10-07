@@ -178,6 +178,8 @@ svg{display:block}
 .go.light{background:var(--surface);color:var(--ink)}
 .card.urgent .go.light{background:var(--surface)}
 .printbar{display:flex;gap:10px;margin:0 0 14px}
+.dayhd{font-size:13px;font-weight:800;color:var(--ink2);margin:6px 4px -2px;letter-spacing:.02em}
+.dayhd:first-child{margin-top:0}
 .agbar{display:flex;gap:12px;align-items:flex-start;margin:0 0 14px;padding:12px 14px;border-radius:16px;background:#FFF4E5;color:#7A4B00;font-size:13px;line-height:1.45}
 .agbar.on{background:var(--green-bg);color:var(--green)}
 .agbar i{flex:none;width:9px;height:9px;border-radius:50%;background:currentColor;margin-top:5px}
@@ -505,6 +507,8 @@ function tween(el,to){
 function isTodo(o){return !o.status||o.status<1}
 function isPacked(o){return o.status===1||o.status===2}
 function isShipped(o){return o.status>=3}
+function shipAt(o){ var h=o.history||[]; for(var i=h.length-1;i>=0;i--){ if(h[i].s==='已寄出') return h[i].at; } return o.updatedAt; }
+function dayLabel(t){ var d=new Date(t), k=ymd(d), n=new Date(); if(k===ymd(n)) return '今天'; var y=new Date(n.getTime()-86400000); if(k===ymd(y)) return '昨天'; return (d.getMonth()+1)+'月'+d.getDate()+'日 星期'+WEEK[d.getDay()]; }
 var WEEK='日一二三四五六';
 function renderHeader(){
   var d=new Date();
@@ -519,12 +523,12 @@ function renderHeader(){
     ? '<div class="cutoff">'+ICON.clock+'<span>'+cut+' 截單</span><span class="sub">還有 '+(left>=60?Math.floor(left/60)+' 小時 ':'')+(left%60)+' 分 · 今天要寄 '+dueToday+' 筆</span></div>'
     : '<div class="cutoff closed">'+ICON.clock+'<span>今天已截單</span><span class="sub">之後的訂單明天寄 · 今天還有 '+dueToday+' 筆沒寄</span></div>');
   var over=active.filter(function(o){return dueOf(o)==='over'}).length;
-  var shippedToday=state.orders.filter(function(o){return o.status===3&&isToday(o.updatedAt)}).length;
+  var shippedToday=state.orders.filter(isShipped).length;
   var todoN=state.orders.filter(isTodo).length, packedN=state.orders.filter(isPacked).length;
   if(!$('stats').children.length){
-    $('stats').innerHTML=['待包貨','已包好','今天已出貨'].map(function(l,i){return '<div class="stat'+(i===2?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
+    $('stats').innerHTML=['待包貨','已包好','已出貨'].map(function(l,i){return '<div class="stat'+(i===2?' hl':'')+'"><b data-v="0">0</b><span>'+l+'</span></div>'}).join('');
   }
-  var on = state.sf==='shipToday'?2 : state.view==='packed'?1 : state.view==='ship'?0 : -1;
+  var on = state.view==='done'?2 : state.view==='packed'?1 : state.view==='ship'?0 : -1;
   [].forEach.call($('stats').children,function(el,i){ el.dataset.stat=i; el.classList.toggle('on',i===on); });
   var bs=$('stats').querySelectorAll('b'); [todoN,packedN,shippedToday].forEach(function(v,i){tween(bs[i],v)});
   var pool = state.orders.filter(state.view==='done'?isShipped:state.view==='packed'?isPacked:isTodo);
@@ -574,7 +578,7 @@ function render(){
     rows.sort(function(a,b){
       return (b.urgent-a.urgent) || ((rank[dueOf(a)]==null?3:rank[dueOf(a)])-(rank[dueOf(b)]==null?3:rank[dueOf(b)])) || (b.createdAt-a.createdAt);
     });
-  } else rows.sort(function(a,b){return b.updatedAt-a.updatedAt});
+  } else rows.sort(function(a,b){return shipAt(b)-shipAt(a)});
   if(!rows.length){
     m.innerHTML='<div class="empty view"><div class="big">'+(done?'📭':packedV?'📦':'🎉')+'</div><b>'+(done?'最近 7 天沒有出貨的訂單':packedV?'沒有等著寄的包裹':'今天的貨都包好了')+'</b>'+(done?'':packedV?'包好的訂單會排在這裡，拿去超商寄':'官網、賣貨便的新訂單會自動出現在這裡')+'</div>';
     return;
@@ -582,7 +586,10 @@ function render(){
   var i=0;
   var bar=state.sf?'<div class="sfbar"><span>'+(state.sf==='over'?'只看逾期的訂單':'只看今天出貨的訂單')+'</span><button data-sfclear>顯示全部</button></div>':'';
   if(packedV){ bar=agentBar(); }
-  m.innerHTML=bar+'<div class="list view">'+rows.map(function(o){ var isNew=!state.seen[o.id]; state.seen[o.id]=1; return cardHTML(o,isNew?i++:-1); }).join('')+'</div>';
+  var lastDay='';
+  m.innerHTML=bar+'<div class="list view">'+rows.map(function(o){ var isNew=!state.seen[o.id]; state.seen[o.id]=1;
+    var hd=''; if(done){ var dk=ymd(new Date(shipAt(o))); if(dk!==lastDay){ lastDay=dk; hd='<div class="dayhd">'+dayLabel(shipAt(o))+'</div>'; } }
+    return hd+cardHTML(o,isNew?i++:-1); }).join('')+'</div>';
 }
 
 function dueTag(o){
@@ -605,7 +612,7 @@ function agentBar(){
     (agentOn()?'官網訂單按「已包好」就會自動印寄件單':(state.agentSeen?'最後連線 '+when(state.agentSeen)+'。':'')+'寄件單請先從 Shopline 後台印，不影響出貨')+'</div></div>';
 }
 function printHTML(o){
-  if(o.platform!=='shopline') return '<div class="pst">賣貨便寄件單請用賣貨便後台印</div>';
+  if(o.platform!=='web') return '<div class="pst">賣貨便寄件單請用賣貨便後台印</div>';
   var j=o.print, st=j&&j.state, t='';
   if(st==='queued') t='<div class="pst run">'+ICON.print+'排隊中，等列印電腦'+(agentOn()?'':'（列印電腦沒有連線）')+'</div>';
   else if(st==='working') t='<div class="pst run">'+ICON.print+'列印中…</div>';
@@ -622,7 +629,7 @@ function cardHTML(o,newIdx){
     '<div class="bar" style="background:'+p.bar+'"></div>'+
     '<div class="c-head"><span class="tag" style="background:'+p.color+';color:'+p.ink+'">'+p.name+'</span>'+
     (o.urgent&&o.status<3?'<span class="tag red">急單</span>':'')+dueTag(o)+
-    '<span class="age">'+(o.status>=3&&last?when(last.at)+' 出貨':isPacked(o)&&last?when(last.at)+' 包好':ago(o.createdAt))+'</span></div>'+
+    '<span class="age">'+(o.status>=3?ago(shipAt(o))+' 出貨':isPacked(o)&&last?when(last.at)+' 包好':ago(o.createdAt))+'</span></div>'+
     '<div class="ono-row"><span class="ono">'+esc(o.orderNo||'（未填編號）')+'</span>'+(o.orderNo?'<button class="icon-btn" data-act="copy" aria-label="複製編號">'+ICON.copy+'</button>':'')+'</div>'+
     (items.length?'<div class="items">'+items.map(function(it){var l=locOf(it.name);return '<div class="item">'+thumb(it.name)+'<div class="itx"><div class="iname">'+esc(it.name)+'</div><div class="imeta">'+(l?'<span class="loc">'+esc(l)+'</span>':'')+'<span class="iq">× '+it.qty+'</span></div></div></div>'}).join('')+'</div>':'')+
     (o.note?'<div class="note"><b>備註 </b>'+esc(o.note)+'</div>':'')+
@@ -1019,7 +1026,7 @@ function shipOut(id){
   var el=document.querySelector('.card[data-id="'+id+'"]');
   if(el) el.classList.add('leaving');
   var code=shipOut.code||''; shipOut.code='';
-  var o=findOrder(id), sl=o&&o.platform==='shopline'&&!(o.print&&o.print.state==='done');
+  var o=findOrder(id), sl=o&&o.platform==='web'&&!(o.print&&o.print.state==='done');
   setTimeout(function(){ quick(id,1,sl?'已包好 ✓ 寄件單送去列印':'已包好 ✓',true,code); if(sl) setTimeout(pollPrint,3000); },400);
 }
 /* ---------- 掃寄件單核對（只在手機上比對，不需要網路） ---------- */
@@ -1072,7 +1079,7 @@ $('tabbar').addEventListener('click',function(e){
 });
 $('stats').addEventListener('click',function(e){
   var t=e.target.closest('[data-stat]'); if(!t||!state.loggedIn) return; var i=+t.dataset.stat;
-  var nv=['ship','packed','done'][i], nf=[null,null,'shipToday'][i];
+  var nv=['ship','packed','done'][i], nf=null;
   if(state.view===nv && state.sf===nf && nf){ nf=null; }
   state.view=nv; state.sf=nf; state.seen={}; render(); window.scrollTo({top:0,behavior:'smooth'});
 });
@@ -1095,7 +1102,7 @@ $('main').addEventListener('click',function(e){
   else if(a==='unship'){ quick(id,1,'已改回已包好',false); }
   else if(a==='unpack'){ quick(id,0,'已改回待包貨',false); }
   else if(a==='shipped'){ quick(id,3,'已出貨 ✓',true); }
-  else if(a==='print'){ if(o.platform!=='shopline'){ toast('賣貨便寄件單請用賣貨便後台印'); return; } o.print={state:'queued',at:Date.now()}; render(); act('apiPrint',id).then(function(){ toast('已送去列印'); pollPrint(); }); }
+  else if(a==='print'){ if(o.platform!=='web'){ toast('賣貨便寄件單請用賣貨便後台印'); return; } o.print={state:'queued',at:Date.now()}; render(); act('apiPrint',id).then(function(){ toast('已送去列印'); pollPrint(); }); }
   else if(a==='urgent'){ o.urgent=!o.urgent; render(); act('apiUpdate',id,{urgent:o.urgent}); }
   else if(a==='edit'){ orderDetail(o); }
 });
